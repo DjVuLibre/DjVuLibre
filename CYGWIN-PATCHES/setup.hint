@@ -1,0 +1,8 @@
+category: Graphics
+requires: cygwin jpeg gcc2 qt
+sdesc: "Compress and decompress graphic images and scanned documents"
+ldesc: "Compress and decompress graphic images and scanned documents
+to DjVu.  DjVu is a highly compressed storage format which can be
+served directly from your web pages.  See http://djvu.sourceforge.net
+for more information."
+
