@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // From: Leon Bottou, 1/31/2002
 // All these XML messages are Lizardtech innovations.
@@ -70,22 +68,42 @@
 #include "ByteStream.h"
 #include "GURL.h"
 #include "debug.h"
+#ifdef HAVE_CTYPE_H
 #include <ctype.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STDIO_H
 // #include <stdio.h>
-#ifdef WIN32
+#endif
+#ifdef HAVE_TCHAR_H
 #include <tchar.h>
+#endif
+#ifndef __CYGWIN32__
+#ifdef HAVE_ATLBASE_H
 #include <atlbase.h>
+#endif
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
+#endif
+#ifdef HAVE_WINREG_H
 #include <winreg.h>
 #endif
-#ifdef UNIX
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_PWD_H
 #include <pwd.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#ifndef UNDER_CE
+#ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
 
@@ -128,14 +146,16 @@ static const char ModuleDjVuDir[] ="share/djvu";
 static const char ModuleDjVuDir[] ="profiles";
 #endif /* !AUTOCONF */
 static const char LocalDjVuDir[] =".DjVu";      // relative to ${HOME}
+#if !defined(WIN32) || defined(__CYGWIN32__)
 static const char RootDjVuDir[] ="/etc/DjVu/";  // global last resort
+#endif
 #ifdef LT_DEFAULT_PREFIX
 static const char DjVuPrefixDir[] = LT_DEFAULT_PREFIX "/profiles";
 #endif
 #ifndef NO_DEBUG
 static const char DebugModuleDjVuDir[] ="../TOPDIR/SRCDIR/profiles";
 #endif
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN32__)
 static const char RootDjVuDir[] ="C:/Program Files/LizardTech/Profiles";
 static const TCHAR registrypath[]= TEXT("Software\\LizardTech\\DjVu\\Profile Path");
 #endif
@@ -147,7 +167,7 @@ static const char DjVuMessageFileName[] = "message";
 static const char MessageFile[]="messages.xml";
 static const char LanguageFile[]="languages.xml";
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN32__) && !defined(__MINGW32__)
 static GURL
 RegOpenReadConfig ( HKEY hParentKey )
 {
@@ -163,7 +183,7 @@ RegOpenReadConfig ( HKEY hParentKey )
     TCHAR path[1024];
     // Success
     TCHAR *szPathValue = path;
-    LPCTSTR lpszEntry = (LPCTSTR &)TEXT("");
+    LPCTSTR lpszEntry= (LPCTSTR &)TEXT('');
     DWORD dwCount = (sizeof(path)/sizeof(TCHAR))-1;
     DWORD dwType;
 
@@ -195,7 +215,7 @@ GetModulePath( void )
   GOS::cwd(cwd);
   return retval;
 }
-#elif defined(UNIX)
+#elif defined(UNIX) || defined(__CYGWIN32__)
 
 static GList<GURL>
 parsePATH(void)
@@ -288,7 +308,7 @@ DjVuMessage::GetProfilePaths(void)
     if(envp.length())
       appendPath(GURL::Filename::UTF8(envp),pathsmap,paths);
 #endif
-#if defined(WIN32) || defined(UNIX)
+#if defined(WIN32) || defined(__CYGWIN32__) || defined(UNIX)
     GURL mpath(GetModulePath());
     if(!mpath.is_empty() && mpath.is_dir())
     {
@@ -306,16 +326,18 @@ DjVuMessage::GetProfilePaths(void)
     GURL dpath = GURL::Filename::UTF8(DjVuDataDir);
     appendPath(dpath,pathsmap,paths);
 #endif
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN32__) && !defined(__MINGW32__)
     appendPath(RegOpenReadConfig(HKEY_CURRENT_USER),pathsmap,paths);
     appendPath(RegOpenReadConfig(HKEY_LOCAL_MACHINE),pathsmap,paths);
 #else
     GUTF8String home=GOS::getenv("HOME");
+#if defined(HAVE_GETUID) && defined(HAVE_GETPWUID)
     if (! home.length()) {
       struct passwd *pw=0;
       if ((pw = getpwuid(getuid())))
         home=GNativeString(pw->pw_dir);
     }
+#endif
     if (home.length()) {
       GURL hpath = GURL::UTF8(LocalDjVuDir,GURL::Filename::UTF8(home));
       appendPath(hpath,pathsmap,paths);

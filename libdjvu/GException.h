@@ -56,9 +56,7 @@
 
 #ifndef _GEXCEPTION_H_
 #define _GEXCEPTION_H_
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -278,7 +276,9 @@ public:
 // Compiler does not support ANSI C++ exceptions.
 // Emulate with setjmp/longjmp.
 
+#ifdef HAVE_SETJMP_H
 #include <setjmp.h>
+#endif
 
 class GExceptionHandler {
 public:

@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // - Author: Leon Bottou, 07/1998
 
@@ -72,9 +70,15 @@
 #include "GOS.h"
 #endif
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

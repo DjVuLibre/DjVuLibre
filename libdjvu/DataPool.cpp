@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "DataPool.h"
 #include "IFFByteStream.h"
@@ -67,12 +65,8 @@
 #include "GOS.h"
 #include "GURL.h"
 #include "debug.h"
-
-#if defined(macintosh) //MCW can't compile
-#else
-#ifndef UNDER_CE 
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
-#endif
 #endif
 
 

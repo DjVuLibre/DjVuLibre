@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "DjVuToPS.h"
 #include "IFFByteStream.h"
@@ -72,14 +70,28 @@
 #include "GBitmap.h"
 #include "GPixmap.h"
 #include "debug.h"
+#ifdef HAVE_STDARG_H
 #include <stdarg.h>
+#endif
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_TIME_H
 #include <time.h>
+#endif
+#ifdef HAVE_MATH_H
 #include <math.h>
-#ifdef UNIX
+#endif
+#ifdef HAVE_PWD_H
 #include <pwd.h>
+#endif
+#ifdef HAVE_GRP_H
 #include <grp.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -333,7 +345,7 @@ store_doc_prolog(ByteStream &str, int pages, int dpi, GRect *grect)
   time_t tm=time(0);
   write(str, "%%%%CreationDate: %s", ctime(&tm));
   // For
-#ifdef UNIX
+#if defined(HAVE_GETUID) && defined(HAVE_GETPWUID)
   passwd *pswd = getpwuid(getuid());
   if (pswd)
     {

@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // From: Leon Bottou, 1/31/2002
 // Lizardtech has split the corresponding cpp file into a decoder and an encoder.
@@ -69,7 +67,9 @@
 #include "GThreads.h"
 #include "GRect.h"
 #include "GBitmap.h"
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

@@ -56,9 +56,7 @@
 
 #ifndef _DJVUIMAGE_H
 #define _DJVUIMAGE_H
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif

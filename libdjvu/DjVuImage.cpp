@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "DjVuImage.h"
 #include "GScaler.h"
@@ -76,7 +74,9 @@
 #include "IFFByteStream.h"
 #include "BSByteStream.h"
 #include "debug.h"
+#ifdef HAVE_STDARG_H
 #include <stdarg.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

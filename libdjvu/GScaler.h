@@ -56,9 +56,7 @@
 
 #ifndef _GSCALER_H_
 #define _GSCALER_H_
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif

@@ -66,31 +66,37 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "GString.h"
 #include "GThreads.h"
 #include "debug.h"
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#if HAS_WCHAR
-# include <locale.h>
-# if !defined(AUTOCONF) || HAVE_WCHAR_H
-#  include <wchar.h>
-# endif
-# if HAS_WCTYPE
-#  include <wctype.h>
-# endif
 #endif
+#ifdef HAVE_STDIO_H
+#include <stdio.h>
+#endif
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+#ifdef HAVE_LOCALE_H
+#include <locale.h>
+#endif
+#ifdef HAVE_WCHAR_H
+#include <wchar.h>
+#endif
+#ifdef HAVE_WCTYPE_H
+#include <wctype.h>
+#endif
+#ifdef HAVE_CTYPE_H
 #include <ctype.h>
+#endif
 
 #ifndef DO_CHANGELOCALE
 #define DO_CHANGELOCALE 1
-#ifdef UNIX
+#if defined(UNIX)||defined(__CYGWIN32__)
 #if THREADMODEL != COTHREADS
 #if THREADMODEL != NOTHREADS
 #undef DO_CHANGELOCALE
@@ -1603,17 +1609,15 @@ GStringRep::setat(int n, char ch) const
   return retval;
 }
 
-#ifdef WIN32
-#define USE_VSNPRINTF _vsnprintf
-#endif
-
 #ifdef AUTOCONF
 # ifdef HAVE_VSNPRINTF
 #  define USE_VSNPRINTF vsnprintf
 # endif
 #else
-# ifdef linux
+# if defined(linux) || defined(__CYGWIN32__)
 #  define USE_VSNPRINTF vsnprintf
+# elif defined(WIN32)
+#  define USE_VSNPRINTF _vsnprintf
 # endif
 #endif
 
@@ -1639,7 +1643,7 @@ GStringRep::vformat(va_list args) const
   GP<GStringRep> retval;
   if(size)
   {
-#ifndef WIN32
+#if defined(__CYGWIN32__) || !defined(WIN32)
     char *nfmt;
     GPBuffer<char> gnfmt(nfmt,size+1);
     nfmt[0]=0;
@@ -1654,7 +1658,7 @@ GStringRep::vformat(va_list args) const
         sscanf(data+from,"%d!%n",&m,&n);
         if(n)
         {
-#ifdef WIN32
+#if !defined(__CYGWIN32__) && defined(WIN32)
           char *lpszFormat=data;
           LPTSTR lpszTemp;
           if((!::FormatMessage(
@@ -1685,7 +1689,7 @@ GStringRep::vformat(va_list args) const
 #endif
         }else
         {
-#ifndef WIN32
+#if defined(__CYGWIN32__) || !defined(WIN32)
           gnfmt.resize(0);
 #endif
           from=(-1);
@@ -1695,7 +1699,7 @@ GStringRep::vformat(va_list args) const
     }
     if(from < 0)
     {
-#ifndef WIN32
+#if defined(__CYGWIN32__) || !defined(WIN32)
       char const * const fmt=(nfmt&&nfmt[0])?nfmt:data;
 #else
       char const * const fmt=data;
@@ -2227,7 +2231,7 @@ GStringRep::concat(const GP<GStringRep> &s1,const GP<GStringRep> &s2) const
   return retval;
 }
 
-#ifdef WIN32
+#if !defined(__CYGWIN32__) && defined(WIN32)
 static const char *setlocale_win32(void)
 {
   static const char *locale=setlocale(LC_ALL,0);
@@ -2241,7 +2245,7 @@ static const char *setlocale_win32(void)
 
 GStringRep::GStringRep(void)
 {
-#ifdef WIN32
+#if !defined(__CYGWIN32__) && defined(WIN32)
   static const char *locale=setlocale_win32();
 #endif
   size=0;

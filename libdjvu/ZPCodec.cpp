@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // From: Leon Bottou, 1/31/2002
 // Almost equal to my initial code.
@@ -67,12 +65,18 @@
 #include "ZPCodec.h"
 #include "ByteStream.h"
 #include "GException.h"
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
-#ifndef UNDER_CE
+#endif
+#ifdef HAVE_ASSERT_H
 #include <assert.h>
 #endif
+#ifdef HAVE_MATH_H
 #include <math.h>
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

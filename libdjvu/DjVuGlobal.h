@@ -56,9 +56,7 @@
 
 #ifndef _DJVUGLOBAL_H
 #define _DJVUGLOBAL_H
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -71,6 +69,10 @@ inline void * operator new(size_t, void * ptr) { return ptr; }
 # include <new>
 #else
 # include <new.h>
+#endif
+
+#ifdef AUTOCONF
+#define DJVU_STATIC_LIBRARY 1
 #endif
 
 #ifndef DJVU_STATIC_LIBRARY
@@ -159,7 +161,7 @@ int djvu_memoryArray_callback ( djvu_delete_callback*, djvu_new_callback*);
 #define delete_throw_spec
 #endif  /* delete_throw_spec */
 
-#ifdef UNIX
+#if defined(UNIX) || defined(__CYGWIN32__)
 extern djvu_new_callback *_djvu_new_ptr;
 extern djvu_new_callback *_djvu_newArray_ptr;
 extern djvu_delete_callback *_djvu_delete_ptr;

@@ -56,12 +56,11 @@
 
 #ifndef HDR_MIME_CHECK
 #define HDR_MIME_CHECK
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
+
 
 void checkMime(void);
 void fixMime(void);

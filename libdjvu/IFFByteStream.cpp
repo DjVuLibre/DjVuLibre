@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // -- Implementation of IFFByteStream
 // - Author: Leon Bottou, 06/1998
@@ -68,7 +66,7 @@
 // This has been changed by Lizardtech to fit better 
 // with their re-implementation of ByteStreams.
 
-#ifndef UNDER_CE
+#ifdef HAVE_ASSERT_H
 #include <assert.h>
 #endif
 #include "IFFByteStream.h"

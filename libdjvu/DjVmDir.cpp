@@ -57,16 +57,16 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "DjVmDir.h"
 #include "BSByteStream.h"
 #include "GURL.h"
 #include "debug.h"
 
+#ifdef HAVE_CTYPE_H
 #include <ctype.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

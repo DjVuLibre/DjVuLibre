@@ -56,9 +56,7 @@
 
 #ifndef HDR_QD_TBAR_MODE_PIECE
 #define HDR_QD_TBAR_MODE_PIECE
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif

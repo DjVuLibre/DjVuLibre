@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // From: Leon Bottou, 1/31/2002
 // This has been heavily changed by Lizardtech.
@@ -73,19 +71,48 @@
 #include "GURL.h"
 #include "debug.h"
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_CTYPE_H
 #include <ctype.h>
+#endif
+#ifdef HAVE_MATH_H
 #include <math.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 
-#ifdef WIN32
+#ifdef HAVE_ATLBASE_H
 #include <atlbase.h>
+#endif
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
-#ifndef UNDER_CE
+#endif
+#ifdef HAVE_DIRECT_H
 #include <direct.h>
-#endif /* UNDER CE */
-#endif /* WIN32 */
+#endif
+
+#if defined(WIN32) || defined(__CYGWIN32__)
+#define HAVE_DRIVE_LETTERS 1
+#define HAVE_UNC_PATHS 1
+#endif
+//ifdef __CYGWIN32__
+//define CYGDRIVE "/cygdrive/"
+//endif
+#ifndef AUTOCONF
+#if defined(UNIX) || defined(__CYGWIN32__)
+#define HAVE_GETUID 1
+#define HAVE_GETPWUID 1
+#endif
+#endif
+#if defined(HAVE_GETUID) && defined(HAVE_GETPWUID)
+#define HAVE_TILDE_EXPANSION 1
+#endif
 
 // -- MAXPATHLEN
 #ifndef MAXPATHLEN
@@ -101,64 +128,72 @@
 # endif
 #endif
 
-#ifdef UNIX
-# include <unistd.h>
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <errno.h>
-# include <fcntl.h>
-# include <pwd.h>
-# include <stdio.h>
-# ifdef AUTOCONF
-#  ifdef TIME_WITH_SYS_TIME
-#   include <sys/time.h>
-#   include <time.h>
-#  else
-#   ifdef HAVE_SYS_TIME_H
-#    include <sys/time.h>
-#   else
-#    include <time.h>
-#   endif
-#  endif
-#  ifdef HAVE_DIRENT_H
-#   include <dirent.h>
-#   define NAMLEN(dirent) strlen((dirent)->d_name)
-#  else
-#   define dirent direct
-#   define NAMLEN(dirent) (dirent)->d_namlen
-#   ifdef HAVE_SYS_NDIR_H
-#    include <sys/ndir.h>
-#   endif
-#   ifdef HAVE_SYS_DIR_H
-#    include <sys/dir.h>
-#   endif
-#   ifdef HAVE_NDIR_H
-#    include <ndir.h>
-#   endif
-#  endif
-# else /* !AUTOCONF */ 
-#  include <sys/time.h>
-#  if defined(XENIX)
-#   define USE_DIRECT
-#   include <sys/ndir.h>
-#  elif defined(OLDBSD)
-#   define USE_DIRECT
-#   include <sys/dir.h>
-#  endif
-#  ifdef USE_DIRECT
-#   define dirent direct
-#   define NAMLEN(dirent) (dirent)->d_namlen
-#  else
-#   include <dirent.h>
-#   define NAMLEN(dirent) strlen((dirent)->d_name)
-#  endif 
-# endif /* !AUTOCONF */
-#endif /* UNIX */
-
-#ifdef macintosh
+#ifdef HAVE_UNIX_H
 #include <unix.h>
+#endif
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+#ifdef HAVE_PWD_H
+#include <pwd.h>
+#endif
+#ifdef HAVE_STDIO_H
+#include <stdio.h>
+#endif
+#ifdef TIME_WITH_SYS_TIME
+# ifdef HAVE_SYS_TYPE_H
+#  include <sys/time.h>
+# endif
+# ifdef HAVE_TYPE_H
+#  include <time.h>
+# endif
+#else
+# ifdef HAVE_SYS_TIME_H
+#   include <sys/time.h>
+# else
+#  ifdef HAVE_TIME_H
+#   include <time.h>
+#  endif
+# endif
+#endif
+#ifdef HAVE_DIRENT_H
+# include <dirent.h>
+# define NAMLEN(dirent) strlen((dirent)->d_name)
+#else
+# define dirent direct
+# define NAMLEN(dirent) (dirent)->d_namlen
+# ifdef HAVE_SYS_NDIR_H
+#  include <sys/ndir.h>
+# endif
+# ifdef HAVE_SYS_DIR_H
+#  include <sys/dir.h>
+# endif
+# ifdef HAVE_NDIR_H
+#  include <ndir.h>
+# endif
+#endif
+
+#if defined(__CYGWIN32__) || defined(UNIX) || defined(macintosh)
+#define HAVE_URLSTAT 1
+static int urlstat(const GURL &url,struct stat *buf)
+{
+  return stat(url,buf);
+}
 #endif
 
 
@@ -183,17 +218,38 @@ static const char percent='%';
 static const char localhostspec1[] = "//localhost/";
 static const char localhostspec2[] = "///";
 static const char nillchar=0;
-#if defined(UNIX)
+#ifdef HAVE_TILDE_EXPANSION
   static const char tilde='~';
+#endif
+#if defined(UNIX) || defined(__CYGWIN32__)
   static const char root[] = "/";
+#define BEST_DIR_SEP '/'
+#ifdef __CYGWIN32__
+#define ALT_DIR_SEP '\\'
+#endif
 #elif defined(WIN32)
   static const char root[] = "\\";
+#define BEST_DIR_SEP '\\'
+#define ALT_DIR_SEP '/'
 #elif defined(macintosh)
+#define BEST_DIR_SEP colon
   static char const * const root = &nillchar; 
 #else
 #error "Define something here for your operating system"
 #endif
 
+static bool
+is_dir_sep(const char c) {
+#ifdef BEST_DIR_SEP
+#ifdef ALT_DIR_SEP
+  return (c == BEST_DIR_SEP || c == ALT_DIR_SEP);
+#else
+  return (c == BEST_DIR_SEP);
+#endif
+#else
+  return false;
+#endif
+}
 
 static const int
 pathname_start(const GUTF8String &url, const int protolength);
@@ -235,11 +291,11 @@ void
 GURL::convert_slashes(void)
 {
    GUTF8String xurl(get_string());
-#ifndef UNIX
+#ifdef ALT_DIR_SEP
    const int protocol_length=protocol(xurl).length();
    for(char *ptr=(xurl.getbuf()+protocol_length);*ptr;ptr++)
    {
-     if(*ptr == backslash)
+     if(is_dir_sep(*ptr))
        *ptr=slash;
    }
    url=xurl;
@@ -293,7 +349,7 @@ GURL::beautify_path(GUTF8String xurl)
   // Convert /./ stuff into plain /
   for(;(ptr=strstr(start, "/./"));collapse(ptr, 2))
     EMPTY_LOOP;
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN32__)
   if(!xurl.cmp(filespec,sizeof(filespec)-1))
   {
 	int offset=1;
@@ -518,7 +574,7 @@ GURL::GURL(const GUTF8String & url_in)
 GURL::GURL(const GNativeString & url_in)
   : url(url_in.getNative2UTF8()), validurl(false)
 {
-#ifdef WIN32
+#if defined(WIN32) || defined(__CYGWIN32__)
   if(is_valid() && is_local_file_url())
   {
     GURL::Filename::UTF8 xurl(UTF8Filename());
@@ -1152,19 +1208,7 @@ GURL::encode_reserved(const GUTF8String &gs)
   for (; *s; s++,d++)
   {
     // Convert directory separator to slashes
-#ifdef WIN32
-    if (*s == backslash || *s== slash)
-#else
-#ifdef macintosh
-    if (*s == colon )
-#else
-#ifdef UNIX
-    if (*s == slash )
-#else
-#error "Define something here for your operating system"
-#endif  
-#endif
-#endif
+    if (is_dir_sep(*s))
     {
       *d = slash; 
       continue;
@@ -1312,7 +1356,7 @@ GURL::GURL(const GNativeString &xurl,const GURL &codebase)
   GURL retval(xurl.getNative2UTF8(),codebase);
   if(retval.is_valid())
   {
-#ifdef WIN32 // Hack for IE to change \\ to /
+#if defined(WIN32) || defined(__CYGWIN32__)
     if(retval.is_local_file_url())
     {
       GURL::Filename::UTF8 retval2(retval.UTF8Filename());
@@ -1379,7 +1423,7 @@ GURL::UTF8Filename(void) const
     //remove all leading slashes
     while(*url_ptr==slash)
       url_ptr++;
-#else
+#else // macintosh
     // Remove possible localhost spec
     if ( !GStringRep::cmp(localhostspec1, url_ptr, sizeof(localhostspec1)-1) )        // RFC 1738 local host form
       url_ptr += sizeof(localhostspec1)-1;
@@ -1396,7 +1440,7 @@ GURL::UTF8Filename(void) const
         && (url_ptr[0] == slash)
         && (url_ptr[1] != slash) )
       url_ptr++;
-#endif
+#endif // macintosh
 
     // Check if we are finished
 #ifdef macintosh
@@ -1413,10 +1457,8 @@ GURL::UTF8Filename(void) const
       retval = expand_name(l_url,root);
     }
 #else  
-    retval = expand_name(url_ptr,root);
-#endif
     
-#ifdef WIN32
+#ifdef HAVE_DRIVE_LETTERS
     if (url_ptr[0] && url_ptr[1]=='|' && url_ptr[2]== slash)
     {
       if ((url_ptr[0]>='a' && url_ptr[0]<='z') 
@@ -1431,7 +1473,9 @@ GURL::UTF8Filename(void) const
         }
       }
     }
-#endif
+#endif // HAVE_DRIVE_LETTERS
+    retval = expand_name(url_ptr,root);
+#endif // macintosh
   }
   // Return what we have
   return retval;
@@ -1443,14 +1487,6 @@ GURL::NativeFilename(void) const
   return UTF8Filename().getUTF82Native();
 }
 
-#if defined(UNIX) || defined(macintosh)
-static int
-urlstat(const GURL &url,struct stat &buf)
-{
-  return stat(url.NativeFilename(),&buf);
-}
-#endif
-
 // is_file(url) --
 // -- returns true if filename denotes a regular file.
 bool
@@ -1459,9 +1495,9 @@ GURL::is_file(void) const
   bool retval=false;
   if(is_local_file_url())
   {
-#if defined(UNIX) || defined(macintosh)
+#ifdef HAVE_URLSTAT
     struct stat buf;
-    if (!urlstat(*this,buf))
+    if (!urlstat(*this,&buf))
     {
       retval=!(buf.st_mode & S_IFDIR);
     }
@@ -1502,9 +1538,9 @@ GURL::is_local_path(void) const
   bool retval=false;
   if(is_local_file_url())
   {
-#if defined(UNIX) || defined(macintosh)
+#ifdef HAVE_URLSTAT
     struct stat buf;
-    retval=!urlstat(*this,buf);
+    retval=!urlstat(*this,&buf);
 #else
 	GUTF8String filename(UTF8Filename());
 	if(filename.length() >= MAX_PATH)
@@ -1543,9 +1579,9 @@ GURL::is_dir(void) const
   if(is_local_file_url())
   {
     // UNIX implementation
-#if defined(UNIX) || defined(macintosh)
+#ifdef HAVE_URLSTAT
     struct stat buf;
-    if (!urlstat(*this,buf))
+    if (!urlstat(*this,&buf))
     {
       retval=(buf.st_mode & S_IFDIR);
     }
@@ -1586,12 +1622,11 @@ GURL
 GURL::follow_symlinks(void) const
 {
   GURL ret = *this;
-#if defined(S_IFLNK)
-#if defined(UNIX) || defined(macintosh)
+#if defined(S_IFLNK) && defined(HAVE_URLSTAT)
   int lnklen;
   char lnkbuf[MAXPATHLEN+1];
   struct stat buf;
-  while ( (urlstat(ret, buf) >= 0) &&
+  while ( (urlstat(ret, &buf) >= 0) &&
           (buf.st_mode & S_IFLNK) &&
           ((lnklen = readlink(ret.NativeFilename(),lnkbuf,sizeof(lnkbuf))) > 0) )
     {
@@ -1599,7 +1634,6 @@ GURL::follow_symlinks(void) const
       GNativeString lnk(lnkbuf);
       ret = GURL(lnk, ret.base());
     }
-#endif
 #endif
   return ret;
 }
@@ -1622,7 +1656,9 @@ GURL::mkdir() const
     if(!retval)
     {
       retval=is_dir();
-#ifdef WIN32
+#ifdef __MINGW32__
+      retval=(is_dir()?0:(_mkdir(NativeFilename())));//MBCS cvt
+#elif defined(WIN32) && !defined(__CYGWIN32__)
       USES_CONVERSION;
       retval =(is_dir()?0:CreateDirectory(A2CT(NativeFilename()), NULL));//MBCS cvt
 #else
@@ -1642,7 +1678,7 @@ GURL::deletefile(void) const
   int retval=(-1);
   if(is_local_file_url())
   {
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN32__) && !defined(__MINGW32__)
     USES_CONVERSION;
     retval=is_dir()
       ?RemoveDirectory(A2CT(NativeFilename()))
@@ -1662,7 +1698,7 @@ GURL::listdir(void) const
   GList<GURL> retval;
   if(is_dir())
   {
-#if defined(UNIX)
+#if defined(UNIX) || defined(__CYGWIN32__)
     DIR * dir=opendir(NativeFilename());//MBCS cvt
     for(dirent *de=readdir(dir);de;de=readdir(dir))
     {
@@ -1674,7 +1710,7 @@ GURL::listdir(void) const
       retval.append(GURL::Native(de->d_name,*this));
     }
     closedir(dir);
-#elif defined (WIN32) && !defined (UNDER_CE)
+#elif defined(WIN32) && !defined(UNDER_CE)
     GURL::UTF8 wildcard("*.*",*this);
     WIN32_FIND_DATA finddata;
     HANDLE handle = FindFirstFile(wildcard.NativeFilename(), &finddata);//MBCS cvt
@@ -1752,14 +1788,18 @@ GURL::expand_name(const GUTF8String &xfname, const char *from)
   GUTF8String retval;
   const size_t maxlen=xfname.length()*9+MAXPATHLEN+10;
   char * const string_buffer = retval.getbuf(maxlen);
+  char * path_start=(char *)string_buffer;
   // UNIX implementation
-#ifdef UNIX
+#if defined(UNDER_CE) 
+  retval=fname;
+#else
+#ifdef HAVE_TILDE_EXPANSION
   // Perform tilde expansion
   GUTF8String senv;
   if (fname && fname[0]==tilde)
   {
     int n;
-    for(n=1;fname[n] && fname[n]!= slash;n++) 
+    for(n=1;fname[n] && is_dir_sep(fname[n]);n++) 
       EMPTY_LOOP;
     struct passwd *pw=0;
     if (n!=1)
@@ -1783,254 +1823,228 @@ GURL::expand_name(const GUTF8String &xfname, const char *from)
       from = (const char *)senv;
       fname = fname + n;
     }
-    for(;fname[0] == slash; fname++)
+    for(;is_dir_sep(fname[0]); fname++)
       EMPTY_LOOP;
   }
+#endif // HAVE_TILDE_EXPANSION
+
   // Process absolute vs. relative path
-  if (fname && fname[0]== slash)
+#if defined(macintosh) // MACINTOSH implementation
+  strcpy(path_start, (const char *)(from?from:GOS::cwd()));
+  
+  if (!GStringRep::cmp(fname,path_start,strlen(path_start)) || is_file(fname))
   {
-    string_buffer[0]=slash;
-    string_buffer[1]=0;
-  }else if (from)
-  {
-    strcpy(string_buffer, expand_name(from));
-  }else
-  {
-    strcpy(string_buffer, GOS::cwd());
+    strcpy(path_start, "");//please don't expand, the logic of filename is chaos.
   }
-  char *s = string_buffer + strlen(string_buffer);
-  if(fname)
-  {
-    for(;fname[0]== slash;fname++)
-      EMPTY_LOOP;
-    // Process path components
-    while(fname[0])
-    {
-      if (fname[0] == dot )
-      {
-        if (!fname[1] || fname[1]== slash)
-        {
-          fname++;
-          continue;
-        }else if (fname[1]== dot && (fname[2]== slash || !fname[2]))
-        {
-          fname +=2;
-          for(;s>string_buffer+1 && *(s-1)== slash; s--)
-            EMPTY_LOOP;
-          for(;s>string_buffer+1 && *(s-1)!= slash; s--)
-            EMPTY_LOOP;
-          continue;
-        }
-      }
-      if ((s==string_buffer)||(*(s-1)!= slash))
-      {
-        *s = slash;
-        s++;
-      }
-      while (*fname &&(*fname!= slash))
-      {
-        *s = *fname++;
-        if ((size_t)((++s)-string_buffer) > maxlen)
-        {
-          G_THROW( ERR_MSG("GURL.big_name") );
-        }
-      }
-      *s = 0;
-      for(;fname[0]== slash;fname++)
-        EMPTY_LOOP;
-    }
-  }
-  if (!fname || !fname[0])
-  {
-    for(;s>string_buffer+1 && *(s-1) == slash; s--)
-      EMPTY_LOOP;
-    *s = 0;
-  }
-#elif defined (WIN32) && !defined (UNDER_CE) // WIN32 implementation
+#else // macintosh
+#if defined(HAVE_UNC_PATHS)||(defined(HAVE_DRIVE_LETTERS)&&!defined(CYGDRIVE))
   // Handle base
-  strcpy(string_buffer, (char const *)(from ? expand_name(from) : GOS::cwd()));
+  strcpy(path_start, (char const *)(from ? expand_name(from) : GOS::cwd()));
   //  GNativeString native;
   if (fname)
   {
-    char *s = string_buffer;
-    char  drv[4];
     // Handle absolute part of fname
     //      Put absolute part of the file name in string_buffer, and
     //      the relative part pointed to by fname.
-    if (fname[0]== slash || fname[0]== backslash)
-    {
-      if (fname[1]== slash || fname[1]== backslash)
-      {       // Case "//abcd"
-        s[0]=s[1]= backslash; s[2]=0;
-      }
-      else
-      {       // Case "/abcd" or "/"
-              //    File is at the root of the current drive. Delete the
-              //    slash at the beginning of the filename and leave
-              //    an explicit identification of the root of the drive in
-              //    string_buffer.
-        fname++;
-        s[3] = '\0';
-      }
+#ifdef HAVE_DRIVE_LETTERS
+    bool has_drive_letter=((fname[0] >= 'A' && fname[0] <= 'Z')
+       ||(fname[0] >= 'a' && fname[0] <= 'z'))&&(fname[1] == colon);
+#ifdef HAVE_UNC_PATHS
+    if(has_drive_letter && is_dir_sep(fname[0]) && is_dir_sep(fname[1]))
+    { // case "x://abcd"
+      fname+=2;
+      has_drive_letter=false;
     }
-    else if (fname[0] && fname[1]==colon)
+#endif // HAVE_UNC_PATHS
+#endif // HAVE_DRIVE_LETTERS
+    if (is_dir_sep(fname[0]))
     {
-      if (fname[2]!= slash && fname[2]!= backslash)
-      {       // Case "x:abcd"
-        if ( toupper((unsigned char)s[0]) != toupper((unsigned char)fname[0])
-          || s[1]!=colon)
+#ifdef HAVE_UNC_PATHS
+      if (is_dir_sep(fname[1]))
+      {       // Case "//abcd"
+        while(is_dir_sep(fname[0])) {
+          fname++;
+        }
+        path_start[0]=BEST_DIR_SEP;
+        path_start[1]='\0';
+        if(fname[0] && !is_dir_sep(fname[0]))
         {
+          char *s=path_start+1;
+          do
+          {
+            if ((size_t)((++s)-string_buffer) > maxlen)
+            {
+              G_THROW( ERR_MSG("GURL.big_name") );
+            }
+            s[0]=*fname++;
+          } while(fname[0] && !is_dir_sep(fname[0]));
+          path_start=s+1;
+        }
+      }else
+#endif // HAVE_UNC_PATHS
+      {       // Case "/abcd" or "/"
+              //    File is at the root of the current drive. 
+        if(((path_start[0] >= 'A' && path_start[0] <= 'Z')||(path_start[0] >= 'a' && path_start[0] <= 'z'))
+           && path_start[1] == colon) {
+          //    Delete the slash at the beginning of the filename and leave
+          //    an explicit identification of the root of the drive in
+          //    string_buffer.
+          fname++;
+          path_start+=2;
+#ifdef HAVE_UNC_PATHS
+        }else if(is_dir_sep(path_start[0])&&is_dir_sep(path_start[1])&&!is_dir_sep(path_start[2]))
+        { // cwd: is "//xxxx/..."
+          char *s=path_start+2;
+          fname++;
+          for(;s[0]&&!is_dir_sep(s[0]);s++)
+            EMPTY_LOOP;
+          path_start=s;
+#endif // HAVE_UNC_PATHS
+        }
+      }
+      path_start[0]=BEST_DIR_SEP;
+      path_start[1]='\0';
+#ifdef HAVE_DRIVE_LETTERS
+    }else if(has_drive_letter)
+    { // case "x:..."
+      if (!is_dir_sep(fname[2]))
+      {       // Case "x:abcd"
+        if ( toupper((unsigned char)path_start[0]) != toupper((unsigned char)fname[0])
+          || path_start[1]!=colon)
+        {
+          char  drv[4];
           drv[0]=fname[0];
           drv[1]=colon;
           drv[2]= dot ;
           drv[3]=0;
-          GetFullPathName(drv, maxlen, string_buffer, &s);
-          strcpy(string_buffer,(const char *)GUTF8String(string_buffer).getNative2UTF8());
-          s = string_buffer;
+          char *s=path_start;
+          GetFullPathName(drv, maxlen, path_start, &s);
+          strcpy(path_start,(const char *)GNativeString(path_start).getNative2UTF8());
         }
         fname += 2;
-      }
-      else if (fname[3]!= slash && fname[3]!= backslash)
-      {       // Case "x:/abcd"
-        s[0]=toupper((unsigned char)fname[0]);
-        s[1]=colon;
-        s[2]=backslash;
-        s[3]=0;
+      }else
+      { // Case "x:/abcd"
+        path_start[0]=toupper((unsigned char)fname[0]);
+        path_start[1]=colon;
+        path_start[2]=BEST_DIR_SEP;
+        path_start[3]='\0';
         fname += 3;
       }
-      else
-      {       // Case "x://abcd"
-        s[0]=s[1]=backslash;
+      path_start+=2;
+#endif // HAVE_DRIVE_LETTERS
+    }else
+    { // Case "abcd"
+      char *s=path_start+strlen(path_start)-1;
+      if((s>=path_start)&&!is_dir_sep(*s))
+      {
+        s[1]=BEST_DIR_SEP;
         s[2]=0;
-        fname += 4;
       }
-    }
-    // Process path components
-    for(;*fname== slash || *fname==backslash;fname++)
-      EMPTY_LOOP;
-    while(*fname)
-    {
-      if (fname[0]== dot )
-      {
-        if (fname[1]== slash || fname[1]==backslash || !fname[1])
-        {
-          fname++;
-          continue;
-        }else if ((fname[1] == dot)
-          && (fname[2]== slash || fname[2]==backslash || !fname[2]))
-        {
-          fname += 2;
-          char *back=_tcsrchr(string_buffer,backslash);
-          char *forward=_tcsrchr(string_buffer,slash);
-          if(back>forward)
-          {
-            *back=0;
-          }else if(forward)
-          {
-            *forward=0;
-          }
-          s = string_buffer;
-          continue;
-        }
-        char* s2=s;//MBCS DBCS
-        for(;*s;s++) 
-          EMPTY_LOOP;
-        char* back = _tcsrchr(s2,backslash);//MBCS DBCS
-        if ((s>string_buffer)&&(*(s-1)!= slash)&&(back == NULL || (back!=NULL && s-1 != back) ))//MBCS DBCS
-          //if ((s>string_buffer)&&(*(s-1)!= slash)&&(*(s-1)!= backslash))
-        {
-          *s = backslash;
-          s++;
-        }
-        while (*fname && *fname!= slash && *fname!=backslash)
-        {
-          *s = *fname++;
-          if ((size_t)((++s)-string_buffer) > maxlen)
-            G_THROW( ERR_MSG("GURL.big_name") );
-        }
-        *s = 0;
-      }
-      char* s2=s;//MBCS DBCS
-      for(;*s;s++) 
-        EMPTY_LOOP;
-      char* back = _tcsrchr(s2,backslash);//MBCS DBCS
-      if ((s>string_buffer)&&(*(s-1)!= slash)&&(back == NULL || (back!=NULL && s-1 != back) ))//MBCS DBCS
-        //if ((s == string_buffer)||((*(s-1)!= slash) && (*(s-1)!=backslash)))
-      {
-        *s = backslash;
-        s++;
-      }
-      while (*fname && (*fname!= slash) && (*fname!=backslash))
-      {
-        *s = *fname++;
-        if ((size_t)((++s)-string_buffer) > maxlen)
-          G_THROW( ERR_MSG("GURL.big_name") );
-      }
-      *s = 0;
-      for(;(*fname== slash)||(*fname==backslash);fname++)
-        EMPTY_LOOP;
     }
   }
-#elif defined(macintosh) // MACINTOSH implementation
-  strcpy(string_buffer, (const char *)(from?from:GOS::cwd()));
-  
-  if (!GStringRep::cmp(fname, string_buffer,strlen(string_buffer)) || is_file(fname))
+#else // defined(HAVE_UNC_PATHS)||(defined(HAVE_DRIVE_LETTERS)&&!defined(CYGDRIVE))
+  if (fname && is_dir_sep(fname[0]))
   {
-    strcpy(string_buffer, "");//please don't expand, the logic of filename is chaos.
+    path_start[0]=BEST_DIR_SEP;
+    path_start[1]=0;
+#ifdef CYGDRIVE
+  }else if(
+      ((fname[0] >= 'A' && fname[0] <= 'Z')
+       ||(fname[0] >= 'a' && fname[0] <= 'z'))
+      &&fname[1] == colon && is_dir_sep(fname[2])) 
+  {
+    sprintf(path_start,"%s%c%c",CYGDRIVE,fname[0],BEST_DIR_SEP);
+    fname+=3;
+    path_start+=strlen(path_start)-2;
+#endif // CYGDRIVE
+  }else if (from)
+  {
+    strcpy(path_start, expand_name(from));
+  }else
+  {
+    strcpy(path_start, GOS::cwd());
   }
-  
-  // Process path components
-  char *s = string_buffer + strlen(string_buffer);
+#endif // defined(HAVE_UNC_PATHS)||(defined(HAVE_DRIVE_LETTERS)&&!defined(CYGDRIVE))
+#endif // macintosh
   if(fname)
   {
-    for(;fname[0]==colon;fname++)
+    for(;is_dir_sep(fname[0]);fname++)
       EMPTY_LOOP;
+  }
+    // Process path components
+  if (fname)
+  {
+    char *s=path_start+strlen(path_start);
     while(fname[0])
     {
+      if(*s) {
+        s+=strlen(s);
+      }
+      if(s <= path_start) {
+        path_start[0]=BEST_DIR_SEP;
+        (s=path_start+1)[0]=0;
+      }
       if (fname[0]== dot )
       {
-        if (fname[1]==colon || !fname[1])
+        if (!fname[1]||is_dir_sep(fname[1]))
         {
-          fname++;
+          fname+=2;
+          continue;
+        }else if ((fname[1] == dot)
+          && (!fname[2]||is_dir_sep(fname[2])))
+        {
+          fname+=3;
+          for(--s;is_dir_sep(s[0]);) {
+            s[0]=0;
+            if(--s == path_start) {
+              break;
+            }
+          }
+          for(;s>path_start;s--) {
+            if(is_dir_sep(*s)) {
+              s[0]=0;
+              break;
+            }
+          }
           continue;
         }
-        if ((fname[1]== dot )
-          &&(fname[2]==colon || fname[2]==0))
-        {
-          fname +=2;
-          for(;(s>string_buffer+1)&&(*(s-1)==colon);s--)
-            EMPTY_LOOP;
-          for(;(s>string_buffer+1)&&(*(s-1)!=colon);s--)
-            EMPTY_LOOP;
-          continue;
+      }
+      if(fname[0] && !is_dir_sep(fname[0]))
+      {
+        if((s>path_start)&&is_dir_sep(s[-1])) {
+          --s;
+        }else {
+          s[0]=BEST_DIR_SEP;
         }
+        do
+        {
+          if ((size_t)((++s)-string_buffer) > maxlen)
+          {
+            G_THROW( ERR_MSG("GURL.big_name") );
+          }
+          s[0]=*fname++;
+        } while(fname[0] && !is_dir_sep(fname[0]));
+        ++s;
+        s[0]=0;
       }
-      if ((s==string_buffer)||(*(s-1)!=colon))
-      {
-        *s = colon;
-        s++;
-      }
-      while (*fname!=0 && *fname!=colon)
-      {
-        *s = *fname++;
-        if ((++s)-string_buffer > maxlen)
-          G_THROW( ERR_MSG("GURL.big_name") );
-      }
-      *s = 0;
-      for(;fname[0]==colon;fname++)
+      for(;is_dir_sep(*fname);fname++)
         EMPTY_LOOP;
     }
+    if(s <= path_start) {
+      string_buffer[0]=BEST_DIR_SEP;
+      (s=path_start+1)[0]=0;
+    }
   }
-  for(;(s>string_buffer+1) && (*(s-1)==colon);s--)
-    EMPTY_LOOP;
-  *s = 0;
-  return ((string_buffer[0]==colon)?(string_buffer+1):string_buffer);
-#elif   defined(UNDER_CE) 
-  retval=fname;
+  if ((size_t)strlen(string_buffer) > maxlen)
+  {
+    G_THROW( ERR_MSG("GURL.big_name") );
+  }
+#if defined(macintosh) // MACINTOSH implementation
+  return ((string_buffer[0]==BEST_DIR_SEP)?(string_buffer+1):string_buffer);
 #else
-#error "Define something here for your operating system"
-#endif  
   return retval;
+#endif
+#endif
 }
 
 unsigned int

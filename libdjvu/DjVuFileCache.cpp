@@ -57,14 +57,14 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "DjVuFileCache.h"
 #include "debug.h"
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

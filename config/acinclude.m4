@@ -112,12 +112,12 @@ AC_DEFUN(AC_CXX_OPTIMIZE,[
            ;;
       esac
    else
+     case x"$ac_debug" in
+       x0 | x1 | x2 | x3 | x4 | x5 | x6 | x7 | x8 | x9 )  OPTS="$OPTS -DDEBUGLVL=$ac_debug" ;;
+       xr*)   OPTS="$OPTS -DRUNTIME_DEBUG_ONLY" ;;
+     esac
      AC_CHECK_CXX_OPT([-Wall],[OPTS="$OPTS -Wall"])
    fi
-   case x"$ac_debug" in
-     x[0-9])  OPTS="$OPTS -DDEBUGLVL=$ac_debug" ;;
-     xr*)   OPTS="$OPTS -DRUNTIME_DEBUG_ONLY" ;;
-   esac
 ])
 
 dnl -------------------------------------------------------
@@ -387,7 +387,7 @@ for flag in $acx_pthread_flags; do
         # functions on Solaris that doesn't have a non-functional libc stub.
         # We try pthread_create on general principles.
         AC_TRY_LINK([#include <pthread.h>],
-                    [pthread_t th; pthread_join(th, 0);
+                    [ pthread_t th; pthread_join(th, 0);
                      pthread_attr_init(0); pthread_cleanup_push(0, 0);
                      pthread_create(0,0,0,0); pthread_cleanup_pop(0); ],
                     [acx_pthread_ok=yes])
@@ -515,7 +515,7 @@ AC_ARG_ENABLE(threads,
 ac_threads=no
 if test x$ac_use_threads != xno ; then
   case x$ac_use_threads in
-  x|xyes|xauto|xposix|xpthread)
+  x|xyes|xauto|xposix|xpthread|xwinthread)
         AC_PATH_PTHREAD(
                 [ ac_threads=pthread
                   ac_use_threads=pthread
@@ -527,6 +527,12 @@ if test x$ac_use_threads != xno ; then
   case x$ac_use_threads in
   xposix|xpthread)
         ;;
+  xwinthread)
+        AC_PATH_COTHREAD(
+                [ ac_threads=winthread
+                  THREAD_CFLAGS="-DTHREADMODEL=WINTHREADS"
+                ] )
+        ;;
   x|xyes|xauto|xcothread)
         AC_PATH_COTHREAD(
                 [ ac_threads=cothread
@@ -536,7 +542,7 @@ if test x$ac_use_threads != xno ; then
   *)
         AC_MSG_ERROR(
 [Invalid argument for --enable-threads
-Valid arguments are: yes, no, posix, pthread, cothread, auto.])
+Valid arguments are: yes, no, posix, pthread, cothread, winthread, auto.])
         ;;
   esac
 fi
@@ -725,6 +731,12 @@ AC_DEFUN([AC_PATH_QT],
         ac_has_qt=no
         QTDIR=no
     fi
+    if test "x$cross_compiling" = "xyes" ; then
+        AC_MSG_WARN([Cannot run the Qt Meta-Object compiler when cross compiling.])
+        ac_has_qt=no
+        QTDIR=no
+    fi
+       
   fi
   # Execute
   if test "x$ac_has_qt" != xno ; then

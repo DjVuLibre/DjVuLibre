@@ -57,18 +57,20 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // From: Leon Bottou, 1/31/2002
 // This is purely Lizardtech stuff.
 
 #include "XMLTags.h"
 #include "UnicodeByteStream.h"
+#ifdef HAVE_CTYPE_H
 #include <ctype.h>
+#endif
 #if HAS_WCTYPE
+#ifdef HAVE_WCTYPE_H
 #include <wctype.h>
+#endif
 #endif
 
 

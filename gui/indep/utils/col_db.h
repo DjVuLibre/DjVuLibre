@@ -56,9 +56,7 @@
 
 #ifndef HDR_COL_DB
 #define HDR_COL_DB
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif

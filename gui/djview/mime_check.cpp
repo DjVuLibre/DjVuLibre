@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "prefs.h"
 #include "mime_check.h"
@@ -71,9 +69,9 @@
 
 #include <stdlib.h>
 #include <unistd.h>
+#include "debug.h"
 #include <qtimer.h>
 #include <qmessagebox.h>
-#include "debug.h"
 
 class QMimeChecker : public QObject
 {

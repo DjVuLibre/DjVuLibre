@@ -56,18 +56,22 @@
 
 #ifndef _DEBUG_H_
 #define _DEBUG_H_
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
 
 
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
-#ifdef WIN32
+#endif
+#ifdef HAVE_ATLBASE_H
 #include <atlbase.h> // USES_CONVERSION, A2CT macro
+#endif
+#ifdef HAVE_WINDOWS_H
+#ifndef __CYGWIN32__
 #include <windows.h> // OutputDebugString
+#endif
 #endif 
 
 

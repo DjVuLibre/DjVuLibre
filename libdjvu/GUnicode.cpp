@@ -57,13 +57,13 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "GString.h"
 #if HAS_ICONV
+#ifdef HAVE_ICONV_H
 #include <iconv.h>
+#endif
 #endif
 
 

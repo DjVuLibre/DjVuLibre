@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #ifdef NEED_DJVU_MEMORY
 #ifndef NEED_DJVU_MEMORY_IMPLEMENTATION
@@ -68,11 +66,15 @@
 
 #include "DjVuGlobal.h"
 #include "GException.h"
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 #include "debug.h"
 
-#ifdef UNIX
+#if defined(UNIX) || defined(__CYGWIN32__)
 djvu_delete_callback *
 _djvu_delete_ptr=(djvu_delete_callback *)&(operator delete);
 djvu_delete_callback *
@@ -100,7 +102,7 @@ djvu_memoryObject_callback (
 ) {
   if(delete_handler && new_handler)
   {
-#ifdef UNIX
+#if defined(UNIX) || defined(__CYGWIN32__)
     _djvu_new_ptr=&_djvu_new;
     _djvu_delete_ptr=&_djvu_delete;
 #endif
@@ -109,7 +111,7 @@ djvu_memoryObject_callback (
     return 1;
   }else
   {
-#ifdef UNIX
+#if defined(UNIX) || defined(__CYGWIN32__)
     _djvu_new_ptr=(djvu_new_callback *)&(operator new);
     _djvu_delete_ptr=(djvu_delete_callback *)&(operator delete);
 #endif
@@ -131,7 +133,7 @@ djvu_set_memory_callbacks
 {
   if(free_handler && realloc_handler && malloc_handler)
   {
-#ifdef UNIX
+#if defined(UNIX) || defined(__CYGWIN32__)
     _djvu_new_ptr=(djvu_new_callback *)&_djvu_new;
     _djvu_delete_ptr=(djvu_delete_callback *)&_djvu_delete;
 #endif
@@ -150,7 +152,7 @@ djvu_set_memory_callbacks
     return 1;
   }else
   {
-#ifdef UNIX
+#if defined(UNIX) || defined(__CYGWIN32__)
     _djvu_new_ptr=(djvu_new_callback *)&(operator new);
     _djvu_delete_ptr=(djvu_delete_callback *)&(operator delete);
 #endif
@@ -171,7 +173,7 @@ DJVUAPI void *
 _djvu_new(size_t siz)
 {
   void *ptr;
-#ifndef UNIX
+#if !defined(UNIX) && !defined(__CYGWIN32__)
   if(_djvu_new_handler)
   {
 #endif
@@ -179,7 +181,7 @@ _djvu_new(size_t siz)
     {
       G_THROW( ERR_MSG("DjVuGlobalMemory.exhausted") );
     }
-#ifndef UNIX
+#if !defined(UNIX) && !defined(__CYGWIN32__)
   }else
   {
       ptr=::operator new(siz?siz:1);
@@ -207,7 +209,7 @@ void *
 _djvu_newArray(size_t siz)
 {
   void *ptr;
-#ifndef UNIX
+#if !defined(UNIX) && !defined(__CYGWIN32__)
   if(newArray_handler)
   {
 #endif
@@ -215,7 +217,7 @@ _djvu_newArray(size_t siz)
     {
       G_THROW( ERR_MSG("DjVuGlobalMemory.exhausted") );
     }
-#ifndef UNIX
+#if !defined(UNIX) && !defined(__CYGWIN32__)
   }else
   {
       ptr=::new unsigned char[siz?siz:1];
@@ -234,7 +236,7 @@ _djvu_deleteArray(void *addr)
       (*deleteArray_handler)(addr);
     }else
     {
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN32__)
                 delete [] (addr) ;
 #else
         operator delete [] (addr);

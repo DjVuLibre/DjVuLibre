@@ -56,9 +56,7 @@
 
 #ifndef HDR_QD_TOOLBUTT
 #define HDR_QD_TOOLBUTT
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif

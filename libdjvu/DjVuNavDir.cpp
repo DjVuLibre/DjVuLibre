@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "DjVuNavDir.h"
 #include "debug.h"
@@ -67,7 +65,9 @@
 #include "GOS.h"
 #include "ByteStream.h"
 #include "GURL.h"
+#ifdef HAVE_CTYPE_H
 #include <ctype.h>
+#endif
 
 
 

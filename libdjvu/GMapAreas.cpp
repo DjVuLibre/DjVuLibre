@@ -57,16 +57,18 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "GMapAreas.h"
 #include "GException.h"
 #include "debug.h"
 
+#ifdef HAVE_MATH_H
 #include <math.h>
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

@@ -56,9 +56,7 @@
 
 #ifndef _IFFBYTESTREAM_H_
 #define _IFFBYTESTREAM_H_
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -126,9 +124,15 @@
 
 
 #include "DjVuGlobal.h"
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 #include "GException.h"
 #include "GString.h"
 #include "ByteStream.h"

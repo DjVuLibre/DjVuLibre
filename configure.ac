@@ -82,6 +82,14 @@ dnl   not ready for general use with C++.
 AC_CHECK_LIB(m,sqrt)
 AC_CHECK_LIB(dl,dlopen)
 AC_CHECK_LIB(iconv,libconv)
+case "${host_os}" in
+   *cygwin*) check_win=0 ;;
+   *) check_win=1 ;;
+esac
+if test $check_win -eq 1 ; then
+  AC_CHECK_LIB(msvcp60,mbrlen)
+fi
+
 
 # ----------------------------------------
 # Header Files
@@ -91,9 +99,8 @@ AC_HEADER_STDC
 AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_HEADER_SYS_WAIT     
-AC_CHECK_HEADERS(wchar.h wctype.h sys/mman.h dlfcn.h iconv.h)
-AC_CHECK_HEADERS(sys/ipc.h sys/shm.h)
 AC_CHECK_HEADERS(X11/extensions/Xext.h,,,[#include <X11/Xlib.h>])
+AC_CHECK_HEADERS(assert.h atlbase.h ctype.h dlfcn.h errno.h fcntl.h grp.h iconv.h io.h jconfig.h jerror.h jpeglib.h locale.h math.h ndir.h process.h pthread.h pwd.h setjmp.h stdarg.h stdio.h stdlib.h string.h sys/dir.h sys/ipc.h sys/shm.h sys/mman.h sys/ndir.h sys/stat.h sys/time.h sys/types.h tchar.h time.h unistd.h unix.h wchar.h wctype.h windows.h winreg.h)
 
 # ----------------------------------------
 # Types
@@ -111,6 +118,8 @@ AC_FUNC_MMAP
 AC_FUNC_FORK
 AC_CHECK_FUNCS(wcrtomb iswspace strerror vsnprintf)
 AC_CHECK_FUNCS(gethostname dlopen iconv strftime)
+AC_CHECK_FUNCS(getuid getpwuid gettimeofday select)
+AC_CHECK_FUNCS(_wfopen)
 
 # ----------------------------------------
 # Test auxilliary packages
@@ -138,20 +147,17 @@ AC_PATH_QT(,
 
 
 # Check compilation of xmltools
-ac_enable_xmltools=no
-case "${host_os}" in
-   *cygwin*) ac_enable_xmltools=yes ;;
-esac
 AC_ARG_ENABLE(xmltools,
    AC_HELP_STRING([--enable-xmltools],
                   [enable compilation of the djvu xml tools.]),
-   [ac_enable_xmltools=$enableval])
-if test x$ac_enable_xmltools != xno ; then
-   XML_YES=''
-   XML_NO='#'
-else
+   [ac_enable_xmltools=$enableval], 
+   [ac_enable_xmltools=yes] ) 
+if test x$ac_enable_xmltools != xyes ; then
    XML_YES='#'
    XML_NO=''
+else
+   XML_YES=''
+   XML_NO='#'
 fi
 AC_SUBST(XML_YES)
 AC_SUBST(XML_NO)
@@ -184,6 +190,36 @@ else
 fi
 AC_SUBST(GUI_YES)
 AC_SUBST(GUI_NO)   
+
+# Check compilation of nsdejavu
+AC_ARG_ENABLE(nsdejavu,
+   AC_HELP_STRING([--enable-nsdejavu],
+                  [enable compilation of nsdejavu (default).]),
+   [ac_enable_nsdejavu=$enableval], 
+   [ac_enable_nsdejavu=yes] ) 
+case "${host_os}" in
+   *cygwin*) ac_enable_nsdejavu=no ;;
+esac
+if test x$ac_enable_nsdejavu != xno ; then
+  if test "x$no_threads" = xyes || test "x$no_qt" = xyes || test "x$ac_enable_djview" = xno ; then
+     AC_MSG_WARN([Disabling compilation of nsdejavu.
+--------------------------------------------------------
+*** The plugin portion of this package will not be compiled.
+--------------------------------------------------------])
+     ac_enable_nsdejavu=no;
+  elif test "x$ac_enable_djview" = "xno" ; then
+     ac_enable_nsdejavu=no;
+  fi
+fi
+if test x$ac_enable_nsdejavu != xno ; then
+   NSDEJAVU_YES=''
+   NSDEJAVU_NO='#'
+else
+   NSDEJAVU_YES='#'
+   NSDEJAVU_NO=''
+fi
+AC_SUBST(NSDEJAVU_YES)
+AC_SUBST(NSDEJAVU_NO)   
 
 
 # ----------------------------------------

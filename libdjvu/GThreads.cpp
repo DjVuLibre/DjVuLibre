@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // This file defines machine independent classes
 // for running and synchronizing threads.
@@ -72,8 +70,12 @@
 #include "GThreads.h"
 #include "GException.h"
 #include "DjVuMessageLite.h"
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
 
 // ----------------------------------------
 // Consistency check
@@ -99,14 +101,26 @@
 #endif
 
 #if THREADMODEL==WINTHREADS
-# include <process.h>
+# ifdef HAVE_PROCESS_H
+#   include <process.h>
+#  endif
 #endif
 #if THREADMODEL==COTHREADS
+# ifdef HAVE_SETJMP_H
 # include <setjmp.h>
+# endif
+# ifdef HAVE_STRING_H
 # include <string.h>
+# endif
+# ifdef HAVE_UNISTD_H
 # include <unistd.h>
+# endif
+# ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
+# endif
+# ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>
+# endif
 #endif
 
 
@@ -764,15 +778,10 @@ GThread::current()
 GMonitor::GMonitor()
   : ok(0), count(1), locker(0)
 {
-  // none of this should be necessary ... in theory.
-#ifdef __CYGWIN32__
-  mutex=PTHREAD_MUTEX_INITIALIZER;  // yuk!
-  cond=PTHREAD_COND_INITIALIZER;    // yuk!
-#else
-  memset(&mutex, 0, sizeof(mutex));
-  memset(&cond, 0, sizeof(cond));
-#endif
-  // standard
+  static pthread_mutex_t tmutex=PTHREAD_MUTEX_INITIALIZER;
+  static pthread_cond_t tcond=PTHREAD_COND_INITIALIZER;
+  memcpy(&mutex, tmutex, sizeof(mutex));
+  memcpy(&cond, tcond, sizeof(cond));
   pthread_mutex_init(&mutex, pthread_mutexattr_default);
   pthread_cond_init(&cond, pthread_condattr_default); 
   locker = pthread_self();

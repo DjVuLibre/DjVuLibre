@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "GBitmap.h"
 #include "ByteStream.h"
@@ -67,7 +65,9 @@
 #include "GString.h"
 #include "GThreads.h"
 #include "GException.h"
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 
 // File "$Id$"
 // - Author: Leon Bottou, 05/1997

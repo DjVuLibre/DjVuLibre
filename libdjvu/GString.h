@@ -56,9 +56,7 @@
 
 #ifndef _GSTRING_H_
 #define _GSTRING_H_
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -110,18 +108,29 @@
 #include "DjVuGlobal.h"
 #include "GContainer.h"
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STDARG_H
 #include <stdarg.h>
-#ifdef WIN32
-# include <windows.h>
-# ifndef UNDER_CE
+#endif
+#ifndef __CYGWIN32__
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+#endif
+#if defined(WIN32) && !defined(__CYGWIN32__) && !defined(UNDER_CE)
+# ifndef AUTOCONF
 #  define HAS_WCHAR 1
-#  define HAS_MBSTATE 1
 # endif
+# define HAS_MBSTATE 1
 #endif
 
 #if HAS_WCHAR
-# if !defined(AUTOCONF) || HAVE_WCHAR_H
+# if !defined(AUTOCONF)
+#  define HAVE_WCHAR_H 1
+# endif
+# ifdef HAVE_WCHAR_H
 #  include <wchar.h>
 # endif
 #endif

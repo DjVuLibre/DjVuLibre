@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // From: Leon Bottou, 1/31/2002
 // All these I18N XML messages are Lizardtech innovations.
@@ -72,22 +70,42 @@
 #include "ByteStream.h"
 #include "GURL.h"
 #include "debug.h"
+#ifdef HAVE_CTYPE_H
 #include <ctype.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
 // #include <stdio.h>
-#ifdef WIN32
+#ifdef HAVE_TCHAR_H
 #include <tchar.h>
+#endif
+#ifndef __CYGWIN32__
+#ifdef HAVE_ATLBASE_H
 #include <atlbase.h>
+#endif
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
+#endif
+#ifdef HAVE_WINREG_H
 #include <winreg.h>
 #endif
-#ifdef UNIX
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_PWD_H
 #include <pwd.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#ifdef HAVE_LOCALE_H
 #include <locale.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

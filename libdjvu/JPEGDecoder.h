@@ -56,17 +56,19 @@
 
 #ifndef _JPEGDECODER_H_
 #define _JPEGDECODER_H_
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
 
 #ifdef NEED_JPEG_DECODER
 
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
+#ifdef HAVE_SETJMP_H
 #include <setjmp.h>
+#endif
 
 #include "GSmartPointer.h"
 

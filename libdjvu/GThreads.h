@@ -56,9 +56,7 @@
 
 #ifndef _GTHREADS_H_
 #define _GTHREADS_H_
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -143,7 +141,7 @@
 
 // Known platforms
 #ifndef THREADMODEL
-#if defined(WIN32)
+#if defined(WIN32) && !defined(__CYGWIN32__)
 #define THREADMODEL WINTHREADS
 #endif
 #if defined(macintosh)
@@ -172,17 +170,27 @@
 #endif
 
 #if THREADMODEL==MACTHREADS
+#ifdef HAVE_THREADS_H
 #include <threads.h>
+#endif
 #endif
 
 #if THREADMODEL==POSIXTHREADS
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #undef TRY
 #undef CATCH
 #define _CMA_NOWRAPPERS_
+#ifdef HAVE_PTHREAD_H
 #include <pthread.h>
+#endif
 #endif
 
 #if THREADMODEL==JRITHREADS
@@ -190,9 +198,15 @@
 #endif
 
 #if THREADMODEL==COTHREADS
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#ifndef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #endif
 
 

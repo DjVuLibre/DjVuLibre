@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "DjVuErrorList.h"
 #include "DjVmDoc.h"
@@ -67,7 +65,9 @@
 #include "GContainer.h"
 #include "GOS.h"
 #include "DataPool.h"
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

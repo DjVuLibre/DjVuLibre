@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // -- Implements class PIXMAP
 // Author: Leon Bottou 07/1997
@@ -76,9 +74,13 @@
 #include "GThreads.h"
 #include "Arrays.h"
 #include "JPEGDecoder.h"
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_MATH_H
 #include <math.h>
-#ifndef UNDER_CE
+#endif
+#ifdef HAVE_ASSERT_H
 #include <assert.h>
 #endif
 

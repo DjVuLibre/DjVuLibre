@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #ifdef NEED_JPEG_DECODER
 
@@ -70,10 +68,18 @@ extern "C" {
 #endif
 #undef HAVE_STDLIB_H
 #undef HAVE_STDDEF_H
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_JCONFIG_H
 #include <jconfig.h>
+#endif
+#ifdef HAVE_JPEGLIB_H
 #include <jpeglib.h>
+#endif
+#ifdef HAVE_JERROR_H
 #include <jerror.h>
+#endif
 #ifdef __cplusplus
 }
 #endif

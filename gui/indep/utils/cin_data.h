@@ -56,9 +56,7 @@
 
 #ifndef HDR_CIN_DATA
 #define HDR_CIN_DATA
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif

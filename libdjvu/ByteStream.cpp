@@ -63,9 +63,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // - Author: Leon Bottou, 04/1997
 
@@ -74,29 +72,32 @@
 #include "GOS.h"
 #include "GURL.h"
 #include "DjVuMessage.h"
+#ifdef HAVE_FCNTRL_H
 #include <fcntl.h>
-#if defined(WIN32) || defined(__CYGWIN32__)
+#endif
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 
-#ifdef UNIX
-#ifndef HAS_MEMMAP
-#define HAS_MEMMAP 1
-#endif
-#endif
-
-#ifdef UNIX
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+#ifdef HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#ifdef HAVE_SYS_MMAN_H
 #ifdef HAS_MEMMAP
 #include <sys/mman.h>
 #endif
-#else
-#ifdef macintosh
-#include <unistd.h>
+#endif
 
+#ifdef macintosh
 _MSL_IMP_EXP_C int _dup(int);
 _MSL_IMP_EXP_C int _dup2(int,int);
 _MSL_IMP_EXP_C int _close(int);
@@ -105,12 +106,12 @@ __inline int dup(int _a ) { return _dup(_a);}
 __inline int dup2(int _a, int _b ) { return _dup2(_a, _b);}
 
 #else
-#ifndef UNDER_CE
+#ifdef HAVE_IO_H
 #include <io.h>
 #endif
 #endif
-#endif
-#ifndef UNDER_CE
+
+#ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
 
@@ -689,13 +690,15 @@ ByteStream::Stdio::init(const char mode[])
         mesg= ERR_MSG("ByteStream.bad_mode"); //  Illegal mode in Stdio
     }
   }
+#if defined(__CYGWIN32__) && defined(WIN32)
   if(binary && fp) {
-#if defined(WIN32)
-    _setmode(_fileno(fp), _O_BINARY);
-#elif defined(__CYGWIN32__)
+#ifdef __CYGWIN32__
     setmode(fileno(fp), O_BINARY);
+#else
+    _setmode(_fileno(fp), _O_BINARY);
 #endif
   }
+#endif
   GUTF8String retval;
   if(!mesg)
   {
@@ -716,7 +719,7 @@ ByteStream::Stdio::init(const char mode[])
 static FILE *
 urlfopen(const GURL &url,const char mode[])
 {
-#ifdef WIN32
+#ifdef HAVE__WFOPEN
   FILE *retval=0;
   const GUTF8String filename(url.UTF8Filename());
   wchar_t *wfilename;
@@ -728,10 +731,10 @@ urlfopen(const GURL &url,const char mode[])
     wchar_t *wmode;
     const size_t wmode_size=gmode.length()+1;
     GPBuffer<wchar_t> gwmode(wmode,wmode_size);
-	if(gmode.ncopy(wmode,wmode_size) > 0)
-	{
-	  retval=_wfopen(wfilename,wmode);
-	}
+    if(gmode.ncopy(wmode,wmode_size) > 0)
+    {
+      retval=_wfopen(wfilename,wmode);
+    }
   }
   return retval?retval:fopen((const char *)url.NativeFilename(),mode);
 #else
@@ -739,13 +742,15 @@ urlfopen(const GURL &url,const char mode[])
 #endif
 }
 
-#ifdef UNIX
+#ifndef macintosh
+#ifndef HAVE__WFOPEN
 static int
 urlopen(const GURL &url, const int mode, const int perm)
 {
   return open((const char *)url.NativeFilename(),mode,perm);
 }
-#endif /* UNIX */
+#endif // HAVE__WFOPEN
+#endif // macintosh
 
 GUTF8String
 ByteStream::Stdio::init(const GURL &url, const char mode[])
@@ -753,29 +758,8 @@ ByteStream::Stdio::init(const GURL &url, const char mode[])
   GUTF8String retval;
   if (url.fname() != "-")
   {
-#ifdef macintosh
-    fp = urlfopen(url,mode);
-#else
     /* MBCS */
-    fp=urlfopen(url,mode);
-#if 0
-    if (!fp)
-    {
-      GString utf8Filename(GOS::expand_name(filename));
-      GString utf8Basename(GOS::basename(filename));
-      GString nativeBasename(GOS::encode_mbcs_reserved(utf8Basename.getUTF82Native()));
-      char *fpath;
-      const size_t fpath_length=1+utf8Filename.length()-utf8Basename.length();
-      GPBuffer<char> gfpath(fpath,fpath_length);
-      gfpath.clear();
-      strncpy(fpath,(char*)(const char*)utf8Filename, 
-              utf8Filename.length() - utf8Basename.length());
-      nativeFilename = GUTF8String(fpath).getUTF82Native();
-      nativeFilename+=nativeBasename;
-      fp = fopen((char*)(const char *)nativeFilename, mode);
-    }
-#endif
-#endif
+    fp = urlfopen(url,mode);
     if (!fp)
     {
 #ifndef UNDER_CE
@@ -1126,7 +1110,8 @@ ByteStream::create(const GURL &url,char const * const xmode)
 {
   GP<ByteStream> retval;
   const char *mode = ((xmode) ? xmode : "rb");
-#ifdef UNIX
+#ifndef macintosh
+#ifndef HAVE__WFOPEN
   if (!strcmp(mode,"rb")) 
     {
       int fd = urlopen(url,O_RDONLY,0777);
@@ -1159,7 +1144,8 @@ ByteStream::create(const GURL &url,char const * const xmode)
             close(fd);
         }     
     }
-#endif
+#endif // HAVE__WFOPEN
+#endif // macintosh
   if (! retval)
     {
       Stdio *sbs=new Stdio();

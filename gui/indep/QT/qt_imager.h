@@ -56,9 +56,7 @@
 
 #ifndef HDR_QT_IMAGER
 #define HDR_QT_IMAGER
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif

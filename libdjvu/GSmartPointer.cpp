@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // - Author: Leon Bottou, 05/1997
 
@@ -68,10 +66,12 @@
 // Our original implementation consisted of multiple classes.
 // <http://prdownloads.sourceforge.net/djvu/DjVu2_2b-src.tgz>.
 
-#include <string.h>
 #include "GThreads.h"
 #include "GSmartPointer.h"
 #include "GException.h"
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
 
 
 #ifdef HAVE_NAMESPACES

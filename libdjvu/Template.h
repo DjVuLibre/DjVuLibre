@@ -62,9 +62,7 @@
 
 #ifndef _TEMPLATE_H_
 #define _TEMPLATE_H_
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -73,7 +71,9 @@
 #include "DjVuGlobal.h"
 
 //T// Other include files
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 #include "GException.h"
 
 //T// Begin name space

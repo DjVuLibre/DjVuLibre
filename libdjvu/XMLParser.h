@@ -56,9 +56,7 @@
 
 #ifndef _LT_XMLPARSER__
 #define _LT_XMLPARSER__
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif

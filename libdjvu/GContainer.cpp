@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "GContainer.h"
 
@@ -387,7 +385,10 @@ GListBase::GListBase(const GListBase &ref)
   GListBase::operator= (ref);
 }
 
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+
 GListBase::~GListBase()
 {
   G_TRY

@@ -57,47 +57,67 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 #include "GException.h"
 #include "GThreads.h"
 #include "GOS.h"
 #include "GURL.h"
 
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
+#endif
+#ifdef HAVE_CTYPE_H
 #include <ctype.h>
+#endif
+#ifdef HAVE_MATH_H
 #include <math.h>
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
+#endif
 
-#ifdef WIN32
+#ifndef __CYGWIN32__
+#ifdef HAVE_ATLBASE_H
 #include <atlbase.h>
+#endif
+#ifdef HAVE_WINDOWS_H
 #include <windows.h>
-
-#ifndef UNDER_CE
+#endif
+#ifdef HAVE_DIRECT_H
 #include <direct.h>
 #endif
-#endif   // end win32
-
-
-
-#ifdef UNIX
-# include <errno.h>
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <sys/time.h>
-# include <fcntl.h>
-# include <pwd.h>
-# include <stdio.h>
-# include <unistd.h>
 #endif
 
-#ifdef macintosh
+#ifdef HAVE_UNIX_H
 #include <unix.h>
-#include <errno.h>
-#include <unistd.h>
+#endif
+#ifdef HAVE_ERRNO_H
+# include <errno.h>
+#endif
+#ifdef HAVE_SYS_TYPES_H
+# include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+# include <sys/stat.h>
+#endif
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>
+#endif
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#endif
+#ifdef HAVE_PWD_H
+# include <pwd.h>
+#endif
+#ifdef HAVE_STDIO_H
+# include <stdio.h>
+#endif
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
 #endif
 
 // -- TRUE FALSE
@@ -140,7 +160,7 @@ static const char localhostspec2[] = "///";
 static const char filespec[] = "file:";
 static const char dot='.';
 static const char nillchar=0;
-#if defined(UNIX)
+#if defined(UNIX) || defined(__CYGWIN32__)
   static const char tilde='~';
   static const char root[] = "/";
 #elif defined(WIN32)
@@ -159,7 +179,7 @@ static const char nillchar=0;
 static inline int
 finddirsep(const GUTF8String &fname)
 {
-#if defined(UNIX)
+#if defined(UNIX) || defined(__CYGWIN32__)
   return fname.rsearch('/',0);
 #elif defined(WIN32)
   return fname.rcontains("\\/",0);
@@ -181,7 +201,7 @@ GOS::basename(const GUTF8String &gfname, const char *suffix)
     return gfname;
 
   const char *fname=gfname;
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN32__)
   // Special cases
   if (fname[1] == colon)
   {
@@ -267,14 +287,18 @@ errmsg()
 unsigned long 
 GOS::ticks()
 {
-#ifdef UNIX
+#ifndef AUTOCONF
+#if defined(UNIX) || defined(__CYGWIN32__)
+#define HAVE_GETTIMEOFDAY 1
+#endif
+#endif
+#ifdef HAVE_GETTIMEOFDAY
   struct timeval tv;
   if (gettimeofday(&tv, NULL) < 0)
     G_THROW(errmsg());
   return (unsigned long)( ((tv.tv_sec & 0xfffff)*1000) 
                           + (tv.tv_usec/1000) );
-#else
-#ifdef WIN32
+#elif defined(WIN32)
   DWORD clk = GetTickCount();
   return (unsigned long)clk;
 #else
@@ -284,7 +308,6 @@ GOS::ticks()
 #error "Define something here for your operating system"
 #endif
 #endif  
-#endif
 }
 
 // sleep(int milliseconds) --
@@ -292,7 +315,12 @@ GOS::ticks()
 void 
 GOS::sleep(int milliseconds)
 {
-#ifdef UNIX
+#ifndef AUTOCONF
+#if defined(UNIX) || defined(__CYGWIN32__)
+#define HAVE_SELECT 1
+#endif
+#endif
+#ifdef HAVE_SELECT
   struct timeval tv;
   tv.tv_sec = milliseconds / 1000;
   tv.tv_usec = (milliseconds - (tv.tv_sec * 1000)) * 1000;
@@ -301,10 +329,9 @@ GOS::sleep(int milliseconds)
 #else
   select(0, NULL, NULL, NULL, &tv);
 #endif
-#endif
-#ifdef WIN32
+#elif defined(WIN32)
   Sleep(milliseconds);
-#endif
+#else
 #ifdef macintosh
     unsigned long tick = ticks(), now;
     while (1) {
@@ -313,6 +340,7 @@ GOS::sleep(int milliseconds)
             break;
         GThread::yield();
     }
+#endif
 #endif
 }
 
@@ -330,7 +358,7 @@ GOS::encode_mbcs_reserved(const char * filename)
 
    for(const char * ptr=filename;*ptr;ptr++)
    {
-#ifdef WIN32
+#if defined(WIN32) && !defined(__CYGWIN32__)
  		if (IsDBCSLeadByte((BYTE)*ptr)) { //MBCS DBCS
 			// escape sequence
 			res+=hex[(*ptr >> 4) & 0xf];
@@ -392,30 +420,31 @@ strerror(int errno)
 GUTF8String 
 GOS::cwd(const GUTF8String &dirname)
 {
-#if defined(UNIX) || defined(macintosh) 
-  if (dirname.length() && chdir(dirname.getUTF82Native())==-1)//MBCS cvt
+#if defined(WIN32) && !defined(__CYGWIN32__)
+#define CHDIR(x) _chdir(x)
+#else
+#define CHDIR(x) chdir(x)
+#endif
+
+#ifdef UNDER_CE
+  return GUTF8String(dot) ;
+#else
+  if (dirname.length() && CHDIR(dirname.getUTF82Native())==-1)//MBCS cvt
     G_THROW(errmsg());
   char *string_buffer;
   GPBuffer<char> gstring_buffer(string_buffer,MAXPATHLEN+1);
   char *result = getcwd(string_buffer,MAXPATHLEN);
   if (!result)
     G_THROW(errmsg());
-  return GNativeString(result).getNative2UTF8();//MBCS cvt
-#elif defined(UNDER_CE)
-  return GUTF8String(dot) ;
-#elif defined (WIN32)
+#if defined(WIN32) && !defined(__CYGWIN32__)
   char drv[2];
-  if (dirname.length() && _chdir(dirname.getUTF82Native())==-1)//MBCS cvt
-    G_THROW(errmsg());
   drv[0]= dot ; drv[1]=0;
-  char *string_buffer;
-  GPBuffer<char> gstring_buffer(string_buffer,MAXPATHLEN+1);
-  char *result = getcwd(string_buffer,MAXPATHLEN);
   GetFullPathName(drv, MAXPATHLEN, string_buffer, &result);
-  return GNativeString(string_buffer).getNative2UTF8();//MBCS cvt
-#else
+#elif !defined(UNIX) && !defined(macintosh)
 #error "Define something here for your operating system"
 #endif 
+  return GNativeString(string_buffer).getNative2UTF8();//MBCS cvt
+#endif
 }
 
 GUTF8String

@@ -56,9 +56,7 @@
 
 #ifndef _DJVUFILECACHE_H
 #define _DJVUFILECACHE_H
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
@@ -66,13 +64,11 @@
 
 #include "DjVuFile.h"
 
-#ifndef macintosh //MCW can't compile
-# ifndef UNDER_CE
-#  include <sys/types.h>
-#  include <time.h>
-# endif 
-#else
-# include <time.h>
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_TIME_H
+#include <time.h>
 #endif
 
 

@@ -56,9 +56,7 @@
 
 #ifndef HDR_NETSCAPE
 #define HDR_NETSCAPE
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 #ifdef __GNUG__
 #pragma interface
 #endif
