@@ -57,9 +57,7 @@
 #ifdef __GNUG__
 #pragma implementation
 #endif
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "DjVuConfig.h"
 
 // From: Leon Bottou, 1/31/2002
 // This is purely Lizardtech stuff.
@@ -69,12 +67,16 @@
 #include "GURL.h"
 #include "GString.h"
 
-#if defined(WIN32) || HAS_DLOPEN 
+#if defined(HAVE_DLFNC_H) || defined(HAVE_WINDOWS_H) || HAS_DLOPEN 
 
-#if defined(WIN32)
-#include <Windows.h>
-#else
+#ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
+#else
+#ifndef __CYGWIN32__
+#ifdef HAVE_WINDOWS_H
+#include <windows.h>
+#endif
+#endif
 #endif
 
 
@@ -85,7 +87,6 @@ namespace DJVU {
 #endif
 #endif
 
-
 class DjVuDynamicLib : public GPEnabled
 {
 public:
@@ -95,10 +96,11 @@ public:
   void *lookup(const GUTF8String &name);
 private:
   const GUTF8String name;
+#ifndef HAVE_DLOPEN
   GMap<GUTF8String,void *> smap;
-#ifdef WIN32
   HINSTANCE handle;
 #else
+  GMap<GUTF8String,void *> smap;
   void *handle;
 #endif
 };
@@ -111,14 +113,14 @@ DjVuDynamicLib::create(const GUTF8String &name, GUTF8String &error)
 {
   DjVuDynamicLib * const lib=new DjVuDynamicLib(name);
   GP<DjVuDynamicLib> retval(lib);
-#ifdef WIN32
+#ifndef HAVE_DLOPEN
   lib->handle=LoadLibrary((const char *)GNativeString(name));
 #else
   lib->handle=dlopen((const char *)GNativeString(name),RTLD_LAZY);
 #endif
   if(!lib->handle)
   {
-#ifndef WIN32
+#ifdef HAVE_DLOPEN
     const GUTF8String mesg=GNativeString(dlerror());
     if(mesg.length())
     {
@@ -137,7 +139,7 @@ DjVuDynamicLib::~DjVuDynamicLib()
 {
   if(handle)
   {
-#ifdef WIN32
+#ifndef HAVE_DLOPEN
     FreeLibrary(handle);
 #else
     dlclose(handle);
@@ -151,8 +153,8 @@ DjVuDynamicLib::lookup(const GUTF8String &name)
   GPosition pos = smap.contains(name);
   if(handle && !pos)
   {
-#ifdef WIN32
-    smap[name]=GetProcAddress(handle,(const char *)name);
+#ifndef HAVE_DLOPEN
+    smap[name]=(void *)GetProcAddress(handle,(const char *)name);
 #else
     smap[name]=dlsym(handle,(const char *)name);
 #endif
@@ -196,7 +198,7 @@ DjVuDynamic::DjVuDynamic(const GURL &liburl)
 void *
 DjVuDynamic::lookup(const GUTF8String &symname, const bool nothrow)
 {
-  void *retval=0;
+  void * retval=0;
   if (lib)
     {
       retval=lib->lookup(symname); 
@@ -207,7 +209,7 @@ DjVuDynamic::lookup(const GUTF8String &symname, const bool nothrow)
     }
   return retval;
 }
-#else // defined(WIN32) || HAS_DLOPEN
+#else // defined(HAVE_DLFNC_H) || defined(HAVE_WINDOWS_H) || HAS_DLOPEN 
 
 DjVuDynamic::DjVuDynamic(const GUTF8String &libname)
 {
@@ -226,7 +228,7 @@ DjVuDynamic::lookup(const GUTF8String &symname, const bool nothrow=false)
     G_THROW(error);
   return 0;
 }
-#endif // defined(WIN32) || HAS_DLOPEN 
+#endif // defined(HAVE_DLFNC_H) || defined(HAVE_WINDOWS_H) || HAS_DLOPEN 
 
 DjVuDynamic::DjVuDynamic(void)
 {

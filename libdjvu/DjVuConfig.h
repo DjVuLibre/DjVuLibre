@@ -54,47 +54,116 @@
 // $Id$
 // $Name$
 
-#ifndef _DJVUDYNAMIC_H_
-#define _DJVUDYNAMIC_H_
-#include "DjVuConfig.h"
-#ifdef __GNUG__
-#pragma interface
+#ifndef _DJVUCONFIG_H
+#define _DJVUCONFIG_H
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
 #endif
 
-// From: Leon Bottou, 1/31/2002
-// This is purely Lizardtech stuff.
-
-
-#include "GString.h"
-
-#ifdef HAVE_NAMESPACES
-namespace DJVU {
-# ifdef NOT_DEFINED // Just to fool emacs c++ mode
-}
+#ifdef __CYGWIN32__
+#ifdef WIN32
+#undef WIN32
+#endif
+#ifndef UNIX
+#define UNIX 1
 #endif
 #endif
 
-class GURL;
-class DjVuDynamicLib;
+#ifndef AUTOCONF
+// Options
 
-class DjVuDynamic
-{
-public:
-  DjVuDynamic(void);
-  DjVuDynamic(const GUTF8String &libname);
-  DjVuDynamic(const GURL &liburl);
-  /// Load a dynamic library symbol from the specified library
-  void *lookup(const GUTF8String &symname, const bool nothrow=false);
-  GP<DjVuDynamicLib> lib;
-  GUTF8String error;
-};
+#define DJVU_STATIC_LIBRARY 1
+#if defined(WIN32) && !defined(__CYGWIN32__)
+#define HAVE__WFOPEN 1
+#endif
+#if defined(UNIX) || defined(__CYGWIN32__)
+#define HAS_MEMMAP 1
+#endif
 
 
-#ifdef HAVE_NAMESPACES
-}
-# ifndef NOT_USING_DJVU_NAMESPACE
-using namespace DJVU;
+// Includes
+
+#define HAVE_STDIO_H 1
+#define HAVE_STDLIB_H 1
+#define HAVE_STRING_H 1
+#define HAVE_FCNTL_H 1
+#define HAVE_CTYPE_H 1
+#define HAVE_STDARG_H 1
+#define HAVE_MATH_H 1
+#define HAVE_TIME_H 1
+#define HAVE_PROCESS_H 1
+#define HAVE_SETJMP_H 1
+#define HAVE_DIRENT_H 1
+#define HAVE_JCONFIG_H 1
+#define HAVE_JERROR_H 1
+#define HAVE_JPEGLIB_H 1
+
+
+#ifdef HAS_ICONV
+#define HAVE_ICONV_H 1
+#endif
+
+#ifdef HAS_DLOPEN
+#define HAVE_DLFCN_H 1
+#endif
+
+#if HAS_WCHAR
+# if !defined(AUTOCONF)
+#   define HAVE_WCHAR_H 1
+# endif
+# if HAS_WCTYPE
+#   define HAVE_WCTYPE_H 1
 # endif
 #endif
-#endif // _DJVUDYNAMIC_H_
+
+#if defined(UNIX) || defined(__CYGWIN32__)
+#define HAVE_SYS_STAT_H 1
+#define HAVE_UNISTD_H 1
+#define HAVE_SYS_MMAN_H 1
+#define HAVE_PWD_H 1
+#define HAVE_GRP_H 1
+#define HAVE_SYS_TIME_H 1
+#define TIME_WITH_SYS_TIME 1
+#if defined(XENIX)
+# define USE_DIRECT 1
+# define HAVE_SYS_NDIR_H 1
+#elif defined(OLDBSD)
+# define USE_DIRECT 1
+# define HAVE_SYS_DIR_H 1
+#endif
+#endif /* UNIX */
+
+#if defined(UNIX) || defined(__CYGWIN32__) || (!defined(macintosh) && !defined(UNDER_CE))   
+#define HAVE_SYS_TYPES_H 1
+#endif
+
+#ifdef macintosh
+#define HAVE_UNISTD_H 1
+#define HAVE_UNIX_H 1
+#endif
+
+#ifndef UNDER_CE
+#define HAVE_ASSERT_H 1
+#define HAVE_ERRNO_H 1
+#define HAVE_LOCALE_H 1
+#endif
+
+#if defined(WIN32) || defined(__CYGWIN32__)
+#define HAVE_IO_H 1
+#endif
+
+#ifdef WIN32
+#define HAVE_TCHAR_H 1
+#define HAVE_ATLBASE_H 1
+#define HAVE_WINDOWS_H 1
+#ifndef UNDER_CE
+#define HAVE_DIRECT_H 1
+#endif // !UNDER_CE
+#endif // WIN32
+
+#endif
+
+#endif /* _DJVUCONFIG_H_ */
+
 
