@@ -780,8 +780,8 @@ GMonitor::GMonitor()
 {
   static pthread_mutex_t tmutex=PTHREAD_MUTEX_INITIALIZER;
   static pthread_cond_t tcond=PTHREAD_COND_INITIALIZER;
-  memcpy(&mutex, tmutex, sizeof(mutex));
-  memcpy(&cond, tcond, sizeof(cond));
+  memcpy(&mutex, &tmutex, sizeof(mutex));
+  memcpy(&cond, &tcond, sizeof(cond));
   pthread_mutex_init(&mutex, pthread_mutexattr_default);
   pthread_cond_init(&cond, pthread_condattr_default); 
   locker = pthread_self();
