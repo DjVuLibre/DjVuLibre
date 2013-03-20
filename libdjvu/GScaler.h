@@ -144,16 +144,12 @@ public:
 protected:
   // The sizes
   int inw, inh;
-  int xshift, yshift;
-  int redw, redh;
   int outw, outh;
   // Fixed point coordinates
   int *vcoord;
   GPBuffer<int> gvcoord;
   int *hcoord;
   GPBuffer<int> ghcoord;
-  // Helper
-  void make_rectangles(const GRect &desired, GRect &red, GRect &inp);
 };
 
 
@@ -215,19 +211,12 @@ public:
   void scale( const GRect &provided_input, const GBitmap &input,
               const GRect &desired_output, GBitmap &output );
 protected:
-  // Helpers
-  unsigned char *get_line(int, const GRect &, const GRect &, const GBitmap &);
-  // Temporaries
-  unsigned char *lbuffer;
-  GPBuffer<unsigned char> glbuffer;
+  void do_vertical(int, GRect&, GRect&, GRect&, GBitmap&);
+  void do_horizontal(int, GRect&, GRect&, GRect&, GBitmap&);
+  unsigned int *lbuffer;
+  GPBuffer<unsigned int> glbuffer;
   unsigned char *conv;
   GPBuffer<unsigned char> gconv;
-  unsigned char *p1;
-  GPBuffer<unsigned char> gp1;
-  unsigned char *p2;
-  GPBuffer<unsigned char> gp2;
-  int l1;
-  int l2;
 };
 
 

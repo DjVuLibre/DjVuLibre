@@ -1119,27 +1119,26 @@ do_bitmap(const DjVuImage &dimg, BImager get,
   int red;
   int w = dimg.get_real_width();
   int h = dimg.get_real_height();
-
   int rw = all.width();
   int rh = all.height();
   GRect zrect = rect; 
   zrect.translate(-all.xmin, -all.ymin);
   for (red=1; red<=15; red++)
     if (rw*red>w-red && rw*red<w+red && rh*red>h-red && rh*red<h+red)
-    {
+      {
         GP<GBitmap> bm=(dimg.*get)(zrect, red, align);
         if(bm)
-            return bm->rotate(dimg.get_rotate());
+          return bm->rotate(dimg.get_rotate());
         else
-	        return NULL;
-    }
-  // Find best reduction
+          return NULL;
+      }
+  // Reduce in range
   for (red=15; red>1; red--)
-    if ( (rw*red < w && rh*red < h) ||
-         (rw*red*3 < w || rh*red*3 < h) )
+    if (rw*red*3 < w*2 && rh*red*3 < h*2)
       break;
   // Setup bitmap scaler
-  if (w<=0 || h<=0) return 0;
+  if (w <= 0 || h <= 0) 
+    return 0;
   GP<GBitmapScaler> gbs=GBitmapScaler::create();
   GBitmapScaler &bs=*gbs;
   bs.set_input_size( (w+red-1)/red, (h+red-1)/red );
@@ -1154,10 +1153,9 @@ do_bitmap(const DjVuImage &dimg, BImager get,
   int border = ((zrect.width() + align - 1) & ~(align - 1)) - zrect.width();
   GP<GBitmap> bm = GBitmap::create(zrect.height(), zrect.width(), border);
   bs.scale(srect, *sbm, zrect, *bm);
-  if( bm )
-      return bm->rotate(dimg.get_rotate());
-  else
-      return NULL;
+  if (bm)
+    return bm->rotate(dimg.get_rotate());
+  return NULL;
 }
 
 static GP<GPixmap>
@@ -1193,20 +1191,20 @@ do_pixmap(const DjVuImage &dimg, PImager get,
     if (rw*red>w-red && rw*red<w+red && rh*red>h-red && rh*red<h+red)
     {
       GP<GPixmap> pm = (dimg.*get)(zrect, red, gamma, white);
-        if( pm ) 
-            return pm->rotate(dimg.get_rotate());
-        else
-            return NULL;
+      if( pm ) 
+        return pm->rotate(dimg.get_rotate());
+      else
+        return NULL;
     }
   // These reductions usually go faster (improve!)
   static int fastred[] = { 12,6,4,3,2,1 };
-  // Find best reduction
+  // Find reduction
   for (int i=0; (red=fastred[i])>1; i++)
-    if ( (rw*red < w && rh*red < h) ||
-         (rw*red*3 < w || rh*red*3 < h) )
+    if (rw*red*3 < w*2 && rh*red*3 < h*2)
       break;
   // Setup pixmap scaler
-  if (w<=0 || h<=0) return 0;
+  if (w<=0 || h<=0) 
+    return 0;
   GP<GPixmapScaler> gps=GPixmapScaler::create();
   GPixmapScaler &ps=*gps;
   ps.set_input_size( (w+red-1)/red, (h+red-1)/red );
@@ -1220,10 +1218,9 @@ do_pixmap(const DjVuImage &dimg, PImager get,
   if (!spm) return 0;
   GP<GPixmap> pm = GPixmap::create();
   ps.scale(srect, *spm, zrect, *pm);
-  if(pm)
-      return pm->rotate(dimg.get_rotate());
-  else
-      return NULL;
+  if (pm)
+    return pm->rotate(dimg.get_rotate());
+  return NULL;
 }
 
 GP<GPixmap>  

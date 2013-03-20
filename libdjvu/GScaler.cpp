@@ -94,7 +94,7 @@ namespace DJVU {
 
 
 static int interp_ok = 0;
-static short interp[FRACSIZE][512];
+static int interp[FRACSIZE][512];
 
 static void
 prepare_interp()
@@ -104,7 +104,7 @@ prepare_interp()
       interp_ok = 1;
       for (int i=0; i<FRACSIZE; i++)
         {
-          short *deltas = & interp[i][256];
+          int *deltas = & interp[i][256];
           for (int j = -255; j <= 255; j++)
             deltas[j] = ( j*i + FRACSIZE2 ) >> FRACBITS;
         }
@@ -125,7 +125,11 @@ maxi(int x, int y)
   return (x > y ? x : y);
 }
 
-
+static inline int
+bound(int lo, int x, int hi)
+{
+  return mini(lo, maxi(hi, x));
+}
 
 
 
@@ -136,7 +140,6 @@ maxi(int x, int y)
 
 GScaler::GScaler()
   : inw(0), inh(0), 
-    xshift(0), yshift(0), redw(0), redh(0), 
     outw(0), outh(0),
     gvcoord(vcoord,0), ghcoord(hcoord,0)
 {
@@ -154,13 +157,9 @@ GScaler::set_input_size(int w, int h)
   inw = w;
   inh = h;
   if (vcoord)
-  {
     gvcoord.resize(0);
-  }
   if (hcoord)
-  {
     ghcoord.resize(0);
-  }
 }
 
 
@@ -170,13 +169,9 @@ GScaler::set_output_size(int w, int h)
   outw = w;
   outh = h;
   if (vcoord)
-  {
     gvcoord.resize(0);
-  }
   if (hcoord)
-  {
     ghcoord.resize(0);
-  }
 }
 
 
@@ -188,7 +183,7 @@ prepare_coord(int *coord, int inmax, int outmax, int in, int out)
   // Bresenham algorithm
   int y = beg;
   int z = out/2;
-  int inmaxlim = (inmax-1)*FRACSIZE;
+  int inmaxlim = inmax * FRACSIZE;
   for  (int x=0; x<outmax; x++)
     {
       coord[x] = mini(y,inmaxlim);
@@ -196,6 +191,7 @@ prepare_coord(int *coord, int inmax, int outmax, int in, int out)
       y = y + z / out;  
       z = z % out;
     }
+  coord[outmax] = mini(y,inmaxlim);
   // Result must fit exactly
   if (out==outmax && y!=beg+len)
     G_THROW( ERR_MSG("GScaler.assertion") );
@@ -213,18 +209,10 @@ GScaler::set_horz_ratio(int numer, int denom)
     denom = inw;
   } else if (numer<=0 || denom<=0)
     G_THROW( ERR_MSG("GScaler.ratios") );
-  // Compute horz reduction
-  xshift = 0;
-  redw = inw;
-  while (numer+numer < denom) {
-    xshift += 1;
-    redw = (redw + 1) >> 1;
-   numer = numer << 1;
-  }
   // Compute coordinate table
   if (! hcoord)
-    ghcoord.resize(outw);
-  prepare_coord(hcoord, redw, outw, denom, numer);
+    ghcoord.resize(outw + 1);
+  prepare_coord(hcoord, inw, outw, denom, numer);
 }
 
 
@@ -239,61 +227,45 @@ GScaler::set_vert_ratio(int numer, int denom)
     denom = inh;
   } else if (numer<=0 || denom<=0)
     G_THROW( ERR_MSG("GScaler.ratios") );
-  // Compute horz reduction
-  yshift = 0;
-  redh = inh;
-  while (numer+numer < denom) {
-    yshift += 1;
-    redh = (redh + 1) >> 1;
-    numer = numer << 1;
-  }
   // Compute coordinate table
   if (! vcoord)
-  {
-    gvcoord.resize(outh);
-  }
-  prepare_coord(vcoord, redh, outh, denom, numer);
+    gvcoord.resize(outh + 1);
+  prepare_coord(vcoord, inh, outh, denom, numer);
+
+  
 }
 
 
-void
-GScaler::make_rectangles(const GRect &desired, GRect &red, GRect &inp)
+void 
+GScaler::get_input_rect( const GRect &desired, GRect &required )
 {
-  // Parameter validation
-  if (desired.xmin<0 || desired.ymin<0 ||
-      desired.xmax>outw || desired.ymax>outh )
+  if (desired.xmin < 0 || desired.xmax > outw ||
+      desired.ymin < 0 || desired.ymax > outh )
     G_THROW( ERR_MSG("GScaler.too_big") );
+  required.clear();
+  if (desired.is_empty())
+    return;
   // Compute ratio (if not done yet)
   if (!vcoord) 
     set_vert_ratio(0,0);
   if (!hcoord) 
     set_horz_ratio(0,0);
-  // Compute reduced bounds
-  red.xmin = (hcoord[desired.xmin]) >> FRACBITS;
-  red.ymin = (vcoord[desired.ymin]) >> FRACBITS;
-  red.xmax = (hcoord[desired.xmax-1]+FRACSIZE-1) >> FRACBITS;
-  red.ymax = (vcoord[desired.ymax-1]+FRACSIZE-1) >> FRACBITS;
-  // Borders
-  red.xmin = maxi(red.xmin, 0);
-  red.xmax = mini(red.xmax+1, redw);
-  red.ymin = maxi(red.ymin, 0);
-  red.ymax = mini(red.ymax+1, redh);
-  // Input
-  inp.xmin = maxi(red.xmin<<xshift, 0); 
-  inp.xmax = mini(red.xmax<<xshift, inw); 
-  inp.ymin = maxi(red.ymin<<yshift, 0); 
-  inp.ymax = mini(red.ymax<<yshift, inh); 
+  // Output pixel coordinates in fractional space
+  int x0 = (hcoord[desired.xmin]+hcoord[desired.xmin+1])/2;
+  int y0 = (vcoord[desired.ymin]+vcoord[desired.ymin+1])/2;
+  int x1 = (hcoord[desired.xmax-1]+hcoord[desired.xmax])/2;
+  int y1 = (vcoord[desired.ymax-1]+vcoord[desired.ymax])/2;
+  // Compute bounds with margin
+  required.xmin = (x0 - FRACSIZE2) >> FRACBITS;
+  required.ymin = (y0 - FRACSIZE2) >> FRACBITS;
+  required.xmax = (x1 + FRACSIZE + FRACSIZE2) >> FRACBITS;
+  required.ymax = (y1 + FRACSIZE + FRACSIZE2) >> FRACBITS;
+  // Clip
+  required.xmin = maxi(required.xmin, 0); 
+  required.xmax = mini(required.xmax, inw); 
+  required.ymin = maxi(required.ymin, 0); 
+  required.ymax = mini(required.ymax, inh); 
 }
-
-
-void 
-GScaler::get_input_rect( const GRect &desired_output, GRect &required_input )
-{
-  GRect red;
-  make_rectangles(desired_output, red, required_input);
-}
-
-
 
 
 
@@ -309,7 +281,7 @@ GBitmapScaler::GBitmapScaler()
 
 
 GBitmapScaler::GBitmapScaler(int inw, int inh, int outw, int outh)
-  : glbuffer(lbuffer,0), gconv(conv,0), gp1(p1,0), gp2(p2,0)
+  : glbuffer(lbuffer,0), gconv(conv,0)
 {
   set_input_size(inw, inh);
   set_output_size(outw, outh);
@@ -321,12 +293,104 @@ GBitmapScaler::~GBitmapScaler()
 }
 
 
+void 
+GBitmapScaler::scale( const GRect &provided_input, const GBitmap &input,
+                      const GRect &desired_output, GBitmap &output )
+{
+  // Compute rectangles
+  GRect required_input; 
+  get_input_rect(desired_output, required_input);
+  // Parameter validation
+  if (provided_input.width() != (int)input.columns() ||
+      provided_input.height() != (int)input.rows() )
+    G_THROW( ERR_MSG("GScaler.no_match") );
+  if (provided_input.xmin > required_input.xmin ||
+      provided_input.ymin > required_input.ymin ||
+      provided_input.xmax < required_input.xmax ||
+      provided_input.ymax < required_input.ymax  )
+    G_THROW( ERR_MSG("GScaler.too_small") );
+  // Adjust output pixmap
+  if (desired_output.width() != (int)output.columns() ||
+      desired_output.height() != (int)output.rows() )
+    output.init(desired_output.height(), desired_output.width());
+  output.set_grays(256);
+  // Allocate line buffer
+  glbuffer.resize(required_input.width());
+  // Allocate gray conversion array (conv)
+  gconv.resize(256);
+  int maxgray = input.get_grays() - 1;
+  for (int i=0; i<256; i++) 
+    conv[i]= (i <= maxgray) ? (((i*255) + (maxgray>>1)) / maxgray) : 255;
+  // Prepare interpolation table
+  prepare_interp();
+  // Loop on target rows
+  for (int row=0; row < output.rows(); row++)
+    {
+      do_vertical(row, desired_output, required_input, provided_input, input);
+      do_horizontal(row, desired_output, required_input, provided_input, output);
+    }
+}
+
+void
+GBitmapScaler::do_vertical(int row, GRect &desired_output,
+                           GRect &required_input, GRect &provided_input,
+                           GBitmap &input)
+{
+  int fylo = vcoord[ desired_output.ymin + row ];
+  int fyhi = vcoord[ desired_output.ymin + row + 1 ];
+  if (fyhi - fylo > FRACSIZE)
+    {
+      int ylo = fylo >> FRACBITS;
+      int yhi = (fyhi-1) >> FRACBITS;
+      int div = 0;
+      for (int col=0; col<required_input.width(); col++)
+        lbuffer[col] = 0;
+      for (int y = ylo; y<=yhi; y++)
+        {
+          int frac = FRACSIZE;
+          if (y == ylo)
+            frac -= (fylo & FRACMASK);
+          else if (y == yhi && fyhi > (yhi << FRACBITS))
+            frac = (fyhi & FRACMASK);
+          unsigned char *r = required_input.xmin - provided_input.xmin
+            + input[ bound(0, y-provided_input.ymin, input.rows()-1 ) ];
+          for (int col=0; col<required_input.width(); col++)
+            lbuffer[col] += r[col]*frac;
+          div += frac;
+        }
+      for (int col=0; col<required_input.width(); col++)
+        lbuffer[col] /= frac; ///// arg!
+      
+    }
+  else
+    {
+      // interpolate
+      int ylo = (fylo+fyhi-FRACSIZE)>>(FRACBITS+1);
+      int yhi = (fylo+fyhi+FRACSIZE-1)>>(FRACBITS+1);
+      unsigned char *rlo = required_input.xmin - provided_input.xmin
+        + input[ bound(0, ylo-provided_input.ymin, input.rows()-1 ) ];
+      unsigned char *rhi = required_input.xmin - provided_input.xmin
+        + input[ bound(0, yhi-provided_input.ymin, input.rows()-1 ) ];
+      int *delta = &interp[(((fylo+fyhi)^FRACSIZE)>>1)&FRACMASK][256];
+      for (int col=0; col<required_input.width(); col++)
+        {
+          unsigned char plo = conv[rlo[col]];
+          unsigned char phi = conv[rhi[col]];
+          lbuffer[col] = plo + delta[phi-plo];
+        }
+    }
+}
+
+
+
+
 unsigned char *
 GBitmapScaler::get_line(int fy, 
                         const GRect &required_red, 
                         const GRect &provided_input,
                         const GBitmap &input )
 {
+  int xshift=0,yshift=0,redw=inw,redh=inh;
   if (fy < required_red.ymin)
     fy = required_red.ymin; 
   else if (fy >= required_red.ymax)
@@ -525,6 +589,7 @@ GPixmapScaler::get_line(int fy,
                         const GRect &provided_input,
                         const GPixmap &input )
 {
+  int xshift=0,yshift=0,redw=inw,redh=inh;
   if (fy < required_red.ymin)
     fy = required_red.ymin; 
   else if (fy >= required_red.ymax)
@@ -618,6 +683,7 @@ GPixmapScaler::scale( const GRect &provided_input, const GPixmap &input,
   prepare_interp();
   const int bufw = required_red.width();
   glbuffer.resize(bufw+2);
+  int xshift=0,yshift=0,redw=inw,redh=inh;
   if (xshift>0 || yshift>0)
     {
       gp1.resize(bufw);
